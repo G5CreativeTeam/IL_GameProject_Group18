@@ -12,7 +12,7 @@ public class LevelLogicScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        currentTime = 0;
+
     }
 
     // Update is called once per frame
