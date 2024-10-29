@@ -10,7 +10,7 @@ public class PlotScript : MonoBehaviour, IDropHandler
         if (transform.childCount == 0)
         {
             GameObject dropped = eventData.pointerDrag;
-            PlantScript draggableItem = dropped.GetComponent<PlantScript>();
+            DragDrop draggableItem = dropped.GetComponent<DragDrop>();
             draggableItem.parentAfterDrag = transform;
         }
         
