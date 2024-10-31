@@ -6,7 +6,8 @@ using UnityEngine;
 public class MoneyScript : MonoBehaviour
 {
     public int moneyAvailable = 1000;
-    public TextMeshProUGUI textMeshPro;
+    private TextMeshProUGUI textMeshPro;
+
 
     public void Start()
     {

@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlantScript : MonoBehaviour
 {
+    public int price = 100;
+    
     // Start is called before the first frame update
     void Start()
     {
