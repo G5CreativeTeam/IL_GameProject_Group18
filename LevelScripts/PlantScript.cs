@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlantScript : MonoBehaviour
 {
-    public int growthTime = 10;
+    public float growthTime = 10.0f;
     public int timeUntilWater = 45;
     public int timeWithoutWater = 30;
     public int health = 1000;
@@ -17,14 +17,25 @@ public class PlantScript : MonoBehaviour
     void Start()
     {
         if (!originalPlant) {
-            InvokeRepeating("GrowNext", 3.0f, growthTime);
-
+            InvokeRepeating("GrowNext", growthTime, growthTime);
+            InvokeRepeating("Test", growthTime, growthTime);
         }
     }
 
     public void GrowNext()
     {
-        SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
-        spriteRender.sprite = plantSprite[currentGrowthPhase+1];
+        Debug.Log(currentGrowthPhase <= plantSprite.Length);
+        if (currentGrowthPhase < plantSprite.Length)
+        {
+            SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
+            currentGrowthPhase++;
+            spriteRender.sprite = plantSprite[currentGrowthPhase];
+        }
+        Debug.Log(currentGrowthPhase);
+    }
+
+    public void Test()
+    {
+        
     }
 }
