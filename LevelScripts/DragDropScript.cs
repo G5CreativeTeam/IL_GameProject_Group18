@@ -1,72 +1,113 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
-    private GameObject seedCopy;
-    public Image image;
+    private GameObject dragCopy;
+    public GameObject moneyObject;
+
+    
+    //public Image image;
+    private CanvasGroup canvasGroup;
+    private PointerEventData _lastPointerData;
+
 
     //private Vector3 myPosition = transform.position;
     [HideInInspector] public Transform parentAfterDrag;
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        Debug.Log("On Pointer Down");
-        seedCopy = Instantiate(gameObject);
-        Debug.Log(seedCopy == null);
+        dragCopy = Instantiate(gameObject);
 
-        seedCopy.transform.SetParent(seedCopy.transform.parent, false);
+        MoneyScript money = moneyObject.GetComponent<MoneyScript>();
+        int seedPrice = dragCopy.GetComponent<SeedScript>().price;
 
-        RectTransform originalRect = GetComponent<RectTransform>();
-        RectTransform cloneRect = seedCopy.GetComponent<RectTransform>();
-        cloneRect.sizeDelta = originalRect.sizeDelta;
+        if (dragCopy.GetComponent<SeedScript>() != null && money.moneyAvailable >= seedPrice)
+        {
+            
+            canvasGroup = dragCopy.GetComponent<CanvasGroup>();
 
-        cloneRect.position = Input.mousePosition;
+            dragCopy.transform.SetParent(dragCopy.transform.parent, false);
+
+            RectTransform originalRect = GetComponent<RectTransform>();
+            RectTransform cloneRect = dragCopy.GetComponent<RectTransform>();
+            cloneRect.sizeDelta = originalRect.sizeDelta;
+            cloneRect.position = Input.mousePosition;
+
+            
+        } else
+        {
+            Debug.Log("Not enough money!");
+            Destroy(dragCopy);
+            
+        }
     }
     public void OnBeginDrag(PointerEventData eventData)
     {
-        Debug.Log(eventData.pointerEnter == null);
-        Debug.Log("On Begin Drag");
-        parentAfterDrag = seedCopy.transform.parent;
-        seedCopy.transform.SetParent(transform.root);
-        seedCopy.transform.SetAsLastSibling();
 
-        image.raycastTarget = false;
+        if (dragCopy != null)
+        {
+            parentAfterDrag = dragCopy.transform.parent;
+            dragCopy.transform.SetParent(transform.root);
+            dragCopy.transform.SetAsLastSibling();
+
+            canvasGroup.blocksRaycasts = false;
+            canvasGroup.alpha = 0.5F;
+        }
+
+        //image.raycastTarget = false;
+        _lastPointerData = eventData;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (dragCopy != null)
+        {
+            dragCopy.transform.position = Input.mousePosition;
+        } else
+        {
+            CancelDrag();
+        }
+    }
 
-        Debug.Log("On Drag");
-        Debug.Log(eventData.pointerEnter == null);
-        seedCopy.transform.position = Input.mousePosition;
+    public void CancelDrag()
+    {
+        if (_lastPointerData != null)
+        {
+            _lastPointerData.pointerDrag = null;
+
+            // Reset position here
+        }
     }
     public void OnEndDrag(PointerEventData eventData)
     {
+        MoneyScript money = moneyObject.GetComponent<MoneyScript>();
+        int seedPrice = dragCopy.GetComponent<SeedScript>().price;
 
-        Debug.Log("On End Drag");
-        Debug.Log(eventData.pointerEnter == null);
-        //if (Input.mousePosition )
-        // {
-
-        // }    
-
-        if (eventData.pointerEnter != null && eventData.pointerEnter.GetComponent<PlotScript>() != null)
+        if (dragCopy != null)
         {
-            // Attach to the plot and keep the clone
-            seedCopy.transform.SetParent(eventData.pointerEnter.transform);
-            eventData.pointerEnter.GetComponent<PlotScript>().hasPlant = true; // Update plot status
+            if (eventData.pointerEnter.GetComponent<PlotScript>() != null)
+            {
+
+                Debug.Log("Planted seed");
+                // Attach to the plot and keep the clone
+                dragCopy.transform.SetParent(eventData.pointerEnter.transform);
+                eventData.pointerEnter.GetComponent<PlotScript>().hasPlant = true;
+                dragCopy.transform.SetParent(parentAfterDrag, false);
+                // Update plot status  
+                money.deductMoney(seedPrice);
+
+            }
+            Destroy(dragCopy);
+
+            
+            canvasGroup.alpha = 1F;
+            canvasGroup.blocksRaycasts = true;
         }
-        else
-        {
-            // Destroy the clone if not placed on a plot
-            Destroy(seedCopy);
-        }
-        seedCopy.transform.SetParent(parentAfterDrag, false);
-        image.raycastTarget = true;
     }
 
 
