@@ -1,15 +1,25 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class PlantScript : MonoBehaviour
+public class PlantScript : MonoBehaviour, IPointerClickHandler
 {
     public float growthTime = 10.0f;
-    public int timeUntilWater = 45;
-    public int timeWithoutWater = 30;
-    public int health = 1000;
     public Sprite[] plantSprite;
     public bool originalPlant = true;
+
+    public bool isWatered = true;
+    public float timeUntilWater = 5.0f;
+    public float timeWithoutWater = 30.0f;
+
+    public int health = 1000;
+    public int sellPrice = 200;
+    
+    
+    public GameObject eventSystem;
+
 
     private int currentGrowthPhase = 0;
 
@@ -18,24 +28,71 @@ public class PlantScript : MonoBehaviour
     {
         if (!originalPlant) {
             InvokeRepeating("GrowNext", growthTime, growthTime);
-            InvokeRepeating("Test", growthTime, growthTime);
+            InvokeRepeating("WaterPhase", timeUntilWater, timeUntilWater);
+            
         }
     }
 
     public void GrowNext()
     {
-        Debug.Log(currentGrowthPhase <= plantSprite.Length);
-        if (currentGrowthPhase < plantSprite.Length)
+
+        // Pengondisian apabila terlalu lama dibiarkan saat sudah matang/tahap terakhir
+        if (currentGrowthPhase == plantSprite.Length - 1)
+        {
+            PlotScript plot = gameObject.GetComponentInParent<PlotScript>();
+            
+            plot.hasPlant = false;
+            Destroy(gameObject);
+
+        } 
+        if (currentGrowthPhase < plantSprite.Length-1) //Pengondisian untuk mengecek tanaman belum sampai matang/tahap terakhir
         {
             SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
+            spriteRender.sprite = plantSprite[currentGrowthPhase+1];
             currentGrowthPhase++;
-            spriteRender.sprite = plantSprite[currentGrowthPhase];
+            
         }
-        Debug.Log(currentGrowthPhase);
+        
     }
-
-    public void Test()
+    public void HarvestPhase()
     {
         
+    }
+
+    public void WaterPhase()
+    {
+        SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
+        spriteInfo.color = new Color(0.4F,0.4F,0.4F,1);
+        if (!isWatered)
+        {
+            gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
+            Destroy(gameObject);
+        } else
+        {
+            Debug.Log("I Need Water!");
+            if (spriteInfo.color == new Color(61, 61, 61))
+            {
+                Debug.Log(spriteInfo.color);
+            }
+            isWatered = false;
+        }
+        
+    }
+
+    public void askWater()
+    {
+
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        Sprite sprite = GetComponent<SpriteRenderer>().sprite;
+        bool harvestPhase = sprite == plantSprite[plantSprite.Length - 1];
+       
+        if (harvestPhase) {
+            eventSystem.GetComponent<MoneyScript>().addMoney(sellPrice);
+            Destroy(gameObject);
+            
+        } 
     }
 }

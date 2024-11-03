@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     private GameObject dragCopy;
-    public GameObject moneyObject;
+    public GameObject eventSystem;
 
     
     //public Image image;
@@ -23,10 +23,10 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
     {
         dragCopy = Instantiate(gameObject);
 
-        MoneyScript money = moneyObject.GetComponent<MoneyScript>();
-        int seedPrice = dragCopy.GetComponent<SeedScript>().price;
+        MoneyScript money = eventSystem.GetComponent<MoneyScript>();
+        int itemPrice = dragCopy.GetComponent<itemScript>().price;
 
-        if (dragCopy.GetComponent<SeedScript>() != null && money.moneyAvailable >= seedPrice)
+        if (dragCopy.GetComponent<itemScript>() != null && money.moneyAvailable >= itemPrice)
         {
             
             canvasGroup = dragCopy.GetComponent<CanvasGroup>();
@@ -85,22 +85,20 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
     }
     public void OnEndDrag(PointerEventData eventData)
     {
-        MoneyScript money = moneyObject.GetComponent<MoneyScript>();
-        int seedPrice = dragCopy.GetComponent<SeedScript>().price;
+        MoneyScript money = eventSystem.GetComponent<MoneyScript>();
+        int itemPrice = dragCopy.GetComponent<itemScript>().price;
 
         if (dragCopy != null)
         {
-            if (eventData.pointerEnter.GetComponent<PlotScript>() != null)
+            
+            if (eventData.pointerEnter.GetComponent<PlotScript>() != null && eventData.pointerEnter.GetComponent<PlotScript>().hasPlant == false)
             {
-
-                Debug.Log("Planted seed");
-                // Attach to the plot and keep the clone
-                dragCopy.transform.SetParent(eventData.pointerEnter.transform);
-                eventData.pointerEnter.GetComponent<PlotScript>().hasPlant = true;
-                dragCopy.transform.SetParent(parentAfterDrag, false);
-                // Update plot status  
-                money.deductMoney(seedPrice);
-
+                if (dragCopy.GetComponent<itemScript>().plant != null)
+                {
+                    Debug.Log("Planted succesfully");
+                    money.deductMoney(itemPrice);
+                    eventData.pointerEnter.GetComponent<PlotScript>().hasPlant = true;
+                } 
             }
             Destroy(dragCopy);
 
