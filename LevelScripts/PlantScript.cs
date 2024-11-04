@@ -90,7 +90,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         bool harvestPhase = sprite == plantSprite[plantSprite.Length - 1];
        
         if (harvestPhase) {
-            eventSystem.GetComponent<MoneyScript>().addMoney(sellPrice);
+            eventSystem.GetComponent<StatsScript>().moneyAvailable = eventSystem.GetComponent<StatsScript>().addAmount(sellPrice, eventSystem.GetComponent<StatsScript>().moneyAvailable);
             Destroy(gameObject);
             
         } 

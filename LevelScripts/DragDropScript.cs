@@ -23,7 +23,7 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
     {
         dragCopy = Instantiate(gameObject);
 
-        MoneyScript money = eventSystem.GetComponent<MoneyScript>();
+        StatsScript money = eventSystem.GetComponent<StatsScript>();
         int itemPrice = dragCopy.GetComponent<itemScript>().price;
 
         if (dragCopy.GetComponent<itemScript>() != null && money.moneyAvailable >= itemPrice)
@@ -85,7 +85,7 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
     }
     public void OnEndDrag(PointerEventData eventData)
     {
-        MoneyScript money = eventSystem.GetComponent<MoneyScript>();
+        StatsScript money = eventSystem.GetComponent<StatsScript>();
         int itemPrice = dragCopy.GetComponent<itemScript>().price;
 
         if (dragCopy != null)
@@ -96,7 +96,7 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
                 if (dragCopy.GetComponent<itemScript>().plant != null)
                 {
                     Debug.Log("Planted succesfully");
-                    money.deductMoney(itemPrice);
+                    money.moneyAvailable = money.deductAmount(itemPrice,money.moneyAvailable);
                     eventData.pointerEnter.GetComponent<PlotScript>().hasPlant = true;
                 } 
             }
