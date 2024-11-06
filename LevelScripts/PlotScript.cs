@@ -25,6 +25,7 @@ public class PlotScript : MonoBehaviour, IDropHandler
                     plantObject = Instantiate(draggableItem.plant, transform);
                     plant = plantObject.GetComponent<PlantScript>();
                     plant.originalPlant = false;
+                    plant.eventSystem.GetComponent<StatsScript>().seedPlanted++;
                 } 
    
             } else  {
@@ -42,6 +43,9 @@ public class PlotScript : MonoBehaviour, IDropHandler
                         transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
                         Debug.Log("Successfully Watered");
                     }
+                } else if (draggableItem.fertilizer)
+                {
+
                 }
             }
            

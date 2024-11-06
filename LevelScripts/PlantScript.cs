@@ -11,11 +11,13 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public bool originalPlant = true;
 
     public bool isWatered = true;
+    public bool isFertilized = true;
     public float timeUntilWater = 5.0f;
     public float timeWithoutWater = 30.0f;
 
     public int health = 1000;
     public int sellPrice = 200;
+    public int scoreValue = 20;
     
     
     public GameObject eventSystem;
@@ -29,6 +31,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         if (!originalPlant) {
             InvokeRepeating("GrowNext", growthTime, growthTime);
             InvokeRepeating("WaterPhase", timeUntilWater, timeUntilWater);
+            //InvokeRepeating("FerilizerPhase")
             
         }
     }
@@ -43,6 +46,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             
             plot.hasPlant = false;
             Destroy(gameObject);
+            eventSystem.GetComponent<StatsScript>().plantsLost = eventSystem.GetComponent<StatsScript>().addAmount(1, eventSystem.GetComponent<StatsScript>().plantsLost);
 
         } 
         if (currentGrowthPhase < plantSprite.Length-1) //Pengondisian untuk mengecek tanaman belum sampai matang/tahap terakhir
@@ -67,21 +71,35 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         {
             gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
             Destroy(gameObject);
+            eventSystem.GetComponent<StatsScript>().plantsLost = eventSystem.GetComponent<StatsScript>().addAmount(1, eventSystem.GetComponent<StatsScript>().plantsLost);
         } else
         {
             Debug.Log("I Need Water!");
-            if (spriteInfo.color == new Color(61, 61, 61))
-            {
-                Debug.Log(spriteInfo.color);
-            }
+            
             isWatered = false;
         }
         
     }
 
-    public void askWater()
+    public void FertilizerPhase()
     {
-
+        SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
+        spriteInfo.color = new Color(0.4F, 0.4F, 0.4F, 1);
+        if (!isFertilized)
+        {
+            gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
+            Destroy(gameObject);
+            eventSystem.GetComponent<StatsScript>().plantsLost = eventSystem.GetComponent<StatsScript>().addAmount(1, eventSystem.GetComponent<StatsScript>().plantsLost);
+        }
+        else
+        {
+            Debug.Log("I Need Pupuk bejirrrrrr plis lah bro");
+            if (spriteInfo.color == new Color(61, 61, 61))
+            {
+                Debug.Log(spriteInfo.color);
+            }
+            isFertilized = false;
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -91,8 +109,15 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
        
         if (harvestPhase) {
             eventSystem.GetComponent<StatsScript>().moneyAvailable = eventSystem.GetComponent<StatsScript>().addAmount(sellPrice, eventSystem.GetComponent<StatsScript>().moneyAvailable);
+            eventSystem.GetComponent<StatsScript>().score = eventSystem.GetComponent<StatsScript>().addAmount(scoreValue*2, eventSystem.GetComponent<StatsScript>().score);
+            eventSystem.GetComponent<StatsScript>().plantsHarvested = eventSystem.GetComponent<StatsScript>().addAmount(1, eventSystem.GetComponent<StatsScript>().plantsHarvested);
             Destroy(gameObject);
             
         } 
+    }
+
+    public void TakeDamage(int amount)
+    {
+        health -= amount;
     }
 }

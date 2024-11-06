@@ -8,35 +8,85 @@ using TMPro;
 
 public class SettingScript : MonoBehaviour
 {
-    [SerializeField] private Slider slider;
-    [SerializeField] private TMP_Dropdown dropdown;
+    public Slider audioSlider;
+    public TMP_Dropdown graphicDropdown, resolutionDropdown;
+    public Toggle fullscreenToggle;
 
 
     public AudioMixer audioMixer;
+    private Resolution[] resolutions;
 
-    public void Start()
+    public void Awake()
     {
-        
+        Debug.Log("WAKE UP!");
+        InitiateResolution();
         Load();
     }
     private void OnDisable()
     {
         Save();
     }
+
+    
+
+    private void OnApplicationQuit()
+    {
+        Save();
+    }
     public void SetVolume(float value)
     {
+        
         audioMixer.SetFloat("volume", value);
+        Debug.Log($"SetVolume successful!{value}");
     }
 
-    public void setQuality(int qualityIndex)
+    public void SetQuality(int qualityIndex)
     {
         QualitySettings.SetQualityLevel(qualityIndex);
     }
 
+    public void setFullscreen(bool isFullscreen)
+    {
+        Screen.fullScreen = isFullscreen;
+    }
+
+    public void setResolution(int resolutionIndex)
+    {
+        Resolution resolution = resolutions[resolutionIndex];
+        Screen.SetResolution(resolution.width, resolution.height,Screen.fullScreen);
+    }
+    public void InitiateResolution()
+    {
+        resolutions = Screen.resolutions;
+        resolutionDropdown.ClearOptions();
+
+        List<string> resolutionList = new List<string>();
+
+        int currentResolutionIndex = 0;
+        int i = 0;
+
+        foreach (var resolution in resolutions)
+        {
+            string option = resolution.width + " x " + resolution.height;
+            resolutionList.Add(option);
+
+            if (resolution.width == Screen.currentResolution.width && resolution.height == Screen.currentResolution.height)
+            {
+                currentResolutionIndex = i;
+            } ;
+            i++;
+        }
+        resolutionDropdown.AddOptions(resolutionList);
+        resolutionDropdown.value = currentResolutionIndex;
+        resolutionDropdown.RefreshShownValue();
+    }
+
     private void Save()
     {
-        PlayerPrefs.SetFloat("volume", slider.value);
-        PlayerPrefs.SetInt("quality", dropdown.value);
+        PlayerPrefs.SetFloat("volume", audioSlider.value);
+        PlayerPrefs.SetInt("quality", graphicDropdown.value);
+        PlayerPrefs.SetInt("fullscreen", fullscreenToggle.isOn?1:0);
+        PlayerPrefs.SetInt("resolution",resolutionDropdown.value);
     }
 
     private void Load()
@@ -44,22 +94,41 @@ public class SettingScript : MonoBehaviour
         if (PlayerPrefs.HasKey("volume"))
         {
             float volume = PlayerPrefs.GetFloat("volume");
-            slider.SetValueWithoutNotify(volume);
+            audioSlider.SetValueWithoutNotify(volume);
             SetVolume(volume);
         }
         else
         {
-            slider.SetValueWithoutNotify(slider.value);
+
+            audioSlider.SetValueWithoutNotify(audioSlider.value);
         }
         if (PlayerPrefs.HasKey("quality"))
         {
             int quality = PlayerPrefs.GetInt("quality");
-            dropdown.SetValueWithoutNotify(quality);
-            SetVolume(quality);
+            graphicDropdown.SetValueWithoutNotify(quality);
+            SetQuality(quality);
         }
         else
         {
-            dropdown.SetValueWithoutNotify(dropdown.value);
+            graphicDropdown.SetValueWithoutNotify(graphicDropdown.value);
+        }
+        if (PlayerPrefs.HasKey("fullscreen"))
+        {
+            bool fullscreen = PlayerPrefs.GetInt("fullscreen") == 1? true : false;
+            fullscreenToggle.SetIsOnWithoutNotify(fullscreen);
+            
+        } else
+        {
+            fullscreenToggle.SetIsOnWithoutNotify(fullscreenToggle.isOn);
+        }
+        if (PlayerPrefs.HasKey("resolution"))
+        {
+            int resolutionindex = PlayerPrefs.GetInt("resolution");
+            resolutionDropdown.SetValueWithoutNotify(resolutionindex);
+            setResolution(resolutionindex);
+        } else
+        {
+            resolutionDropdown.SetValueWithoutNotify(resolutionDropdown.value);
         }
     }
 

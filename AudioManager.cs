@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Audio : MonoBehaviour
+public class AudioManager : MonoBehaviour
 {
     private AudioSource _audioSource;
     [SerializeField] private AudioClip[] _audioClip;
@@ -10,6 +10,7 @@ public class Audio : MonoBehaviour
     private void Start()
     {
         _audioSource = GetComponent<AudioSource>();
+        playAudio();
         
     }
 

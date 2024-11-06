@@ -6,8 +6,9 @@ using UnityEngine;
 public class StatsScript : MonoBehaviour
 {
     public int score = 0;
-    private int seedPlanted = 0;
-    private int plantsLost = 0;
+    [HideInInspector] public int seedPlanted = 0;
+    [HideInInspector] public int plantsLost = 0;
+    [HideInInspector] public int plantsHarvested = 0;
 
     public int moneyAvailable = 1000;
 
