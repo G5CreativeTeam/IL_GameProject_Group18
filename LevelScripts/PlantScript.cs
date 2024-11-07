@@ -8,19 +8,20 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
 {
     public float growthTime = 10.0f;
     public Sprite[] plantSprite;
-    public bool originalPlant = true;
+    [HideInInspector] public bool originalPlant = true;
 
-    public bool isWatered = true;
-    public bool isFertilized = true;
+    [HideInInspector] public bool isWatered = true;
+    [HideInInspector]  public bool isFertilized = true;
     public float timeUntilWater = 5.0f;
-    public float timeWithoutWater = 30.0f;
-
+    public float timeUntilFertilized = 10.0f;
     public int health = 1000;
     public int sellPrice = 200;
     public int scoreValue = 20;
-    
+        
     
     public GameObject eventSystem;
+    public GameObject waterIndicator;
+    public GameObject fertilizeIndicator;
 
 
     private int currentGrowthPhase = 0;
@@ -31,7 +32,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         if (!originalPlant) {
             InvokeRepeating("GrowNext", growthTime, growthTime);
             InvokeRepeating("WaterPhase", timeUntilWater, timeUntilWater);
-            //InvokeRepeating("FerilizerPhase")
+            //InvokeRepeating("FertilizerPhase", timeUntilFertilized, timeUntilFertilized);
             
         }
     }
@@ -67,6 +68,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     {
         SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
         spriteInfo.color = new Color(0.4F,0.4F,0.4F,1);
+        
         if (!isWatered)
         {
             gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
@@ -75,7 +77,8 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         } else
         {
             Debug.Log("I Need Water!");
-            
+            GameObject indicator = Instantiate(waterIndicator,transform); 
+            indicator.transform.SetParent(gameObject.transform);
             isWatered = false;
         }
         
@@ -84,7 +87,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public void FertilizerPhase()
     {
         SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
-        spriteInfo.color = new Color(0.4F, 0.4F, 0.4F, 1);
+        spriteInfo.color = new Color(0.6F, 0.2F, 0, 1);
         if (!isFertilized)
         {
             gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
@@ -94,10 +97,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         else
         {
             Debug.Log("I Need Pupuk bejirrrrrr plis lah bro");
-            if (spriteInfo.color == new Color(61, 61, 61))
-            {
-                Debug.Log(spriteInfo.color);
-            }
+            
             isFertilized = false;
         }
     }
@@ -106,8 +106,9 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     {
         Sprite sprite = GetComponent<SpriteRenderer>().sprite;
         bool harvestPhase = sprite == plantSprite[plantSprite.Length - 1];
-       
+        Debug.Log("Clicked");
         if (harvestPhase) {
+            Debug.Log("Harvested");
             eventSystem.GetComponent<StatsScript>().moneyAvailable = eventSystem.GetComponent<StatsScript>().addAmount(sellPrice, eventSystem.GetComponent<StatsScript>().moneyAvailable);
             eventSystem.GetComponent<StatsScript>().score = eventSystem.GetComponent<StatsScript>().addAmount(scoreValue*2, eventSystem.GetComponent<StatsScript>().score);
             eventSystem.GetComponent<StatsScript>().plantsHarvested = eventSystem.GetComponent<StatsScript>().addAmount(1, eventSystem.GetComponent<StatsScript>().plantsHarvested);

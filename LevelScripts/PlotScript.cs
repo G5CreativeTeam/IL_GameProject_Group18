@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 public class PlotScript : MonoBehaviour, IDropHandler
 {
     public bool hasPlant = false;
-    public PlantScript plant;
+    private PlantScript plant;
 
     private GameObject plantObject;
     public void OnDrop(PointerEventData eventData)
@@ -41,11 +41,17 @@ public class PlotScript : MonoBehaviour, IDropHandler
                     {
                         transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered = true;
                         transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+                        Destroy(transform.GetChild(0).GetChild(0).gameObject);
                         Debug.Log("Successfully Watered");
                     }
                 } else if (draggableItem.fertilizer)
                 {
-
+                    if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized)
+                    {
+                        transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
+                        transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+                        Debug.Log("Successfully Fertilized");
+                    }
                 }
             }
            

@@ -21,14 +21,19 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        dragCopy = Instantiate(gameObject);
+        
+    }
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+
+        dragCopy = Instantiate(gameObject, transform);
 
         StatsScript money = eventSystem.GetComponent<StatsScript>();
         int itemPrice = dragCopy.GetComponent<itemScript>().price;
 
         if (dragCopy.GetComponent<itemScript>() != null && money.moneyAvailable >= itemPrice)
         {
-            
+
             canvasGroup = dragCopy.GetComponent<CanvasGroup>();
 
             dragCopy.transform.SetParent(dragCopy.transform.parent, false);
@@ -38,29 +43,28 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
             cloneRect.sizeDelta = originalRect.sizeDelta;
             cloneRect.position = Input.mousePosition;
 
-            
-        } else
+            if (dragCopy != null)
+            {
+                parentAfterDrag = dragCopy.transform.parent;
+                dragCopy.transform.SetParent(transform.root);
+                dragCopy.transform.SetAsLastSibling();
+
+                canvasGroup.blocksRaycasts = false;
+                canvasGroup.alpha = 0.5F;
+            }
+
+            //image.raycastTarget = false;
+            _lastPointerData = eventData;
+
+        }
+        else
         {
             Debug.Log("Not enough money!");
             Destroy(dragCopy);
-            
-        }
-    }
-    public void OnBeginDrag(PointerEventData eventData)
-    {
 
-        if (dragCopy != null)
-        {
-            parentAfterDrag = dragCopy.transform.parent;
-            dragCopy.transform.SetParent(transform.root);
-            dragCopy.transform.SetAsLastSibling();
-
-            canvasGroup.blocksRaycasts = false;
-            canvasGroup.alpha = 0.5F;
         }
 
-        //image.raycastTarget = false;
-        _lastPointerData = eventData;
+        
     }
 
     public void OnDrag(PointerEventData eventData)
