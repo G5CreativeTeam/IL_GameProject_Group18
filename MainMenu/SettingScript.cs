@@ -16,7 +16,7 @@ public class SettingScript : MonoBehaviour
     public AudioMixer audioMixer;
     private Resolution[] resolutions;
 
-    public void Awake()
+    public void Start()
     {
         Debug.Log("WAKE UP!");
         InitiateResolution();
@@ -26,9 +26,6 @@ public class SettingScript : MonoBehaviour
     {
         Save();
     }
-
-    
-
     private void OnApplicationQuit()
     {
         Save();
@@ -87,6 +84,7 @@ public class SettingScript : MonoBehaviour
         PlayerPrefs.SetInt("quality", graphicDropdown.value);
         PlayerPrefs.SetInt("fullscreen", fullscreenToggle.isOn?1:0);
         PlayerPrefs.SetInt("resolution",resolutionDropdown.value);
+        Debug.Log("Save Succesful!");
     }
 
     private void Load()
@@ -96,6 +94,7 @@ public class SettingScript : MonoBehaviour
             float volume = PlayerPrefs.GetFloat("volume");
             audioSlider.SetValueWithoutNotify(volume);
             SetVolume(volume);
+            Debug.Log("Volume Loaded!");
         }
         else
         {
@@ -107,6 +106,7 @@ public class SettingScript : MonoBehaviour
             int quality = PlayerPrefs.GetInt("quality");
             graphicDropdown.SetValueWithoutNotify(quality);
             SetQuality(quality);
+            Debug.Log("Quality Loaded!");
         }
         else
         {
@@ -116,7 +116,8 @@ public class SettingScript : MonoBehaviour
         {
             bool fullscreen = PlayerPrefs.GetInt("fullscreen") == 1? true : false;
             fullscreenToggle.SetIsOnWithoutNotify(fullscreen);
-            
+            Debug.Log("Fullscreen Loaded!");
+
         } else
         {
             fullscreenToggle.SetIsOnWithoutNotify(fullscreenToggle.isOn);
@@ -126,10 +127,21 @@ public class SettingScript : MonoBehaviour
             int resolutionindex = PlayerPrefs.GetInt("resolution");
             resolutionDropdown.SetValueWithoutNotify(resolutionindex);
             setResolution(resolutionindex);
+            Debug.Log("Resolution Loaded!");
         } else
         {
             resolutionDropdown.SetValueWithoutNotify(resolutionDropdown.value);
         }
+        Debug.Log("Load Succesful!");
     }
 
+    public void MoveScreenInside()
+    {
+        gameObject.transform.position = gameObject.transform.parent.position;
+    }
+
+    public void MoveScreenOutside()
+    {
+        gameObject.transform.position = new Vector3(-1000, 0, 0);
+    } 
 }

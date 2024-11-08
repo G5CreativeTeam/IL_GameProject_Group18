@@ -15,49 +15,68 @@ public class PlotScript : MonoBehaviour, IDropHandler
         
         if (eventData != null)
         {
-            
             itemScript draggableItem = eventData.pointerDrag.GetComponent<itemScript>();
-
             if (!hasPlant)
             {
-                if (draggableItem.plant != null)
-                {
-                    plantObject = Instantiate(draggableItem.plant, transform);
-                    plant = plantObject.GetComponent<PlantScript>();
-                    plant.originalPlant = false;
-                    plant.eventSystem.GetComponent<StatsScript>().seedPlanted++;
-                } 
+                SeedDrop(draggableItem);
    
             } else  {
                 if (draggableItem.shovel)
                 {
-                    Debug.Log("Plant Destroyed");
-                    
-                    Destroy(transform.GetChild(0).gameObject);
+                    ShovelDrop();
 
                 } else if (draggableItem.wateringCan)
                 {
-                    if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered)
-                    {
-                        transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered = true;
-                        transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
-                        Destroy(transform.GetChild(0).GetChild(0).gameObject);
-                        Debug.Log("Successfully Watered");
-                    }
+                    WateringCanDrop();
                 } else if (draggableItem.fertilizer)
                 {
-                    if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized)
-                    {
-                        transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
-                        transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
-                        Debug.Log("Successfully Fertilized");
-                    }
+                    FertilizerDrop();
                 }
             }
-           
         }
-        
-        
+    }
+
+    public void SeedDrop(itemScript draggableItem)
+    {
+        if (draggableItem.plant != null)
+        {
+            plantObject = Instantiate(draggableItem.plant, transform);
+            plant = plantObject.GetComponent<PlantScript>();
+            plant.originalPlant = false;
+            plant.eventSystem.GetComponent<StatsScript>().seedPlanted++;
+        }
+    }
+    public void WateringCanDrop()
+    {
+        if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered)
+        {
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered = true;
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().waterTimer = transform.GetChild(0).gameObject.GetComponent<PlantScript>().timeUntilWater;
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyWP = false;
+            //transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+            Destroy(transform.GetChild(0).Find("WaterIndicator(Clone)").gameObject);
+            Debug.Log("Successfully Watered");
+        }
+    }
+
+    public void ShovelDrop()
+    {
+        Debug.Log("Plant Destroyed");
+
+        Destroy(transform.GetChild(0).gameObject);
+    }
+
+    public void FertilizerDrop()
+    {
+        if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized)
+        {
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
+            //transform.GetChild(0).gameObject.GetComponent<PlantScript>().fertilizeTimer = transform.GetChild(0).gameObject.GetComponent<PlantScript>().timeUntilFertilized;
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyFP = false;
+            //transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+            Destroy(transform.GetChild(0).Find("FertilizeIndicator(Clone)").gameObject);
+            Debug.Log("Successfully Fertilized");
+        }
     }
 
 }
