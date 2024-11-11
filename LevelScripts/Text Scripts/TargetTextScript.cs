@@ -16,7 +16,7 @@ public class TargetTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<EventSystem>().target;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"{printedNumber}";
+        textMeshPro.text = $"Objective:\n{printedNumber}";
 
     }
 
@@ -25,7 +25,7 @@ public class TargetTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<EventSystem>().target;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"{printedNumber}";
+        textMeshPro.text = $"Objective:\n{printedNumber}";
     }
 
 }

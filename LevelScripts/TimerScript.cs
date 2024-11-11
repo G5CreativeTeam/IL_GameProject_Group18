@@ -18,7 +18,11 @@ public class TimerScript : MonoBehaviour
     {
         if (remainingTime > 0)
         {
-            remainingTime -= Time.deltaTime;
+            remainingTime = (EventSystem.GetComponent<EventSystem>().levelTime) - EventSystem.GetComponent<EventSystem>().elapsedTime;
+            if (remainingTime <= 6)
+            {
+                timerText.color = new Color(0.9F, 0, 0, 1);
+            }
         } else
         {
             remainingTime = 0;

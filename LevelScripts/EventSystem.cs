@@ -13,8 +13,10 @@ public class EventSystem : MonoBehaviour
     
 
     public GameObject ResultScreen;
+    public GameObject FinishedScreen;
 
-    private float elapsedTime = 0.0f;
+    [HideInInspector] public float elapsedTime = 0.0f;
+    private bool gameOngoing = false;
     public struct LevelGoals {
         public bool moneyBased;
         public bool plantNumBased;
@@ -25,39 +27,76 @@ public class EventSystem : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        StartGame();
+        
+        StartCoroutine(StartCountdown());
+        
     }
 
     // Update is called once per frame
     void Update()
     {
-        elapsedTime += Time.deltaTime;
-        if (roundFinished() && Time.timeScale != 0)
+        if (gameOngoing)
+        {
+            elapsedTime += Time.deltaTime;
+            Debug.Log("Check");
+        }
+        
+        if (RoundFinished() && gameOngoing)
         {
             Debug.Log("Game Finished!");
-            StopGame();
-            ResultScreen.SetActive(true);
-            
+            StartCoroutine(EndResults());
+   
         } 
     }
 
-    public bool roundFinished()
+    IEnumerator EndResults()
     {
-        return (int)elapsedTime == levelTime+1 || gameObject.GetComponent<StatsScript>().moneyAvailable == target;
+        Debug.Log("Finished");
+        FinishedScreen.SetActive(true);
+        yield return new WaitForSeconds(2);
+        FinishedScreen.SetActive(false);
+        Debug.Log("Double Finished");
+        ResultScreen.SetActive(true);
+        StopGame();
+    }
+
+
+    IEnumerator StartCountdown()
+    {
+        Debug.Log(3);
+        yield return new WaitForSeconds(1);
+        Debug.Log(2);
+        yield return new WaitForSeconds(1);
+        Debug.Log(1);
+        yield return new WaitForSeconds(1);
+        Debug.Log("Start!");
+        yield return new WaitForSeconds(1);
+        StartGame();
+    }
+    public bool RoundFinished()
+    {
+        return (int)elapsedTime == levelTime+1 ;
     }
 
     public void StopGame()
     {
         Time.timeScale = 0;
+        gameOngoing = false;
     }
 
     public void StartGame()
     {
         Time.timeScale = 1;
+        gameOngoing = true;
     }
 
-    public void exitToMainMenu()
+    public void ExitToMainMenu()
     {
         SceneManager.LoadSceneAsync(0);
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 }

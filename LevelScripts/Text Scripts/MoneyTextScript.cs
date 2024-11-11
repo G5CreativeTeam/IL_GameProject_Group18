@@ -16,7 +16,7 @@ public class MoneyTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<StatsScript>().moneyAvailable;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"{printedNumber}";
+        textMeshPro.text = $"Rp{printedNumber}";
 
     }
 
@@ -25,7 +25,7 @@ public class MoneyTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<StatsScript>().moneyAvailable;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"{printedNumber}";
+        textMeshPro.text = $"Rp{printedNumber}";
     }
 
 }

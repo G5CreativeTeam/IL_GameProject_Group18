@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler
+public class DragDrop : MonoBehaviour,  IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     private GameObject dragCopy;
     public GameObject eventSystem;
@@ -19,10 +19,6 @@ public class DragDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, I
     //private Vector3 myPosition = transform.position;
     [HideInInspector] public Transform parentAfterDrag;
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        
-    }
     public void OnBeginDrag(PointerEventData eventData)
     {
 
