@@ -10,12 +10,20 @@ public class EventSystem : MonoBehaviour
     public int difficultyLevel = 1;
     public int levelTime = 60;
     public int target = 1500;
-    
+
+
+    public int pestSpawnRate = 1;
+    public int pestMax = 15;
+    public int pestSpeedMultiplier = 1;
+    public int pestDamageMultiplier = 1;
+
+    [HideInInspector] public int numOfPlants;
+    [HideInInspector] public int numOfPests;
 
     public GameObject ResultScreen;
     public GameObject FinishedScreen;
 
-    [HideInInspector] public float elapsedTime = 0.0f;
+    [HideInInspector] public float elapsedTime;
     private bool gameOngoing = false;
     public struct LevelGoals {
         public bool moneyBased;
@@ -27,7 +35,8 @@ public class EventSystem : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        
+        elapsedTime = 0.0f;
+        Time.timeScale = 1.0f;
         StartCoroutine(StartCountdown());
         
     }
@@ -38,7 +47,7 @@ public class EventSystem : MonoBehaviour
         if (gameOngoing)
         {
             elapsedTime += Time.deltaTime;
-            Debug.Log("Check");
+            
         }
         
         if (RoundFinished() && gameOngoing)
@@ -97,6 +106,7 @@ public class EventSystem : MonoBehaviour
 
     public void RestartGame()
     {
+        Time.timeScale = 1;
         SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 }

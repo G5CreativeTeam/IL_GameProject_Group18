@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.EventSystems;
 
-public class PestScript : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler
+public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     public int maxHealth = 10;
     public int damage = 2;
@@ -12,7 +12,15 @@ public class PestScript : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
     public int size = 1;
 
     public GameObject target;
+    public GameObject eventsystem;
+
+    [HideInInspector] public bool originalPest = true;
+
+    private PointerEventData _lastPointerData;
+    private GameObject draggedPest;
+    private CanvasGroup canvasGroup;
     private float distance;
+    private bool newSpawn = true;
 
     public void Start()
     {
@@ -22,10 +30,16 @@ public class PestScript : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
     public void Update()
     {
         target = FindNearestPlant();
-        if (target != null)
+        if (newSpawn && Camera.main.WorldToViewportPoint(gameObject.transform.position).x > 0)
+        {
+            newSpawn = false;
+            
+        }
+            if (target != null && !originalPest)
         {
             TowardsPlant(target);
         }
+        
         
         
         
@@ -44,10 +58,10 @@ public class PestScript : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
     public void TowardsPlant(GameObject target)
     {
         distance = Vector2.Distance(transform.position, target.transform.position);
-        Vector2 direction = target.transform.position - transform.position;
+        
         if (target != null)
         {
-            transform.position = Vector2.MoveTowards(this.transform.position, target.transform.position, speed * Time.deltaTime);
+            transform.position = Vector2.MoveTowards(this.transform.position, target.transform.position, (eventsystem.GetComponent<EventSystem>().pestSpeedMultiplier * speed) * Time.deltaTime);
         }
     }
 
@@ -82,23 +96,54 @@ public class PestScript : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
 
     }
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-        throw new System.NotImplementedException();
-    }
+
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        throw new System.NotImplementedException();
+        draggedPest = gameObject;
+        canvasGroup = draggedPest.GetComponent<CanvasGroup>();
+        canvasGroup.blocksRaycasts = false;
+        Debug.Log("Drag starts!");
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        throw new System.NotImplementedException();
+        draggedPest.transform.position = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, transform.position.z);
+        Debug.Log("Ended");
+        canvasGroup.blocksRaycasts = true;
+        if (Camera.main.WorldToViewportPoint(gameObject.transform.position).x < 0 && !newSpawn)
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        throw new System.NotImplementedException();
+        if (draggedPest != null)
+        {
+            draggedPest.transform.position = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y,transform.position.z);
+            Debug.Log("Just Checking");
+        }
+        else
+        {
+            CancelDrag();
+            Debug.Log("You're cancelled");
+        }
+    }
+
+    public void CancelDrag()
+    {
+        if (_lastPointerData != null)
+        {
+            _lastPointerData.pointerDrag = null;
+
+            // Reset position here
+        }
+    }
+
+    public void PestDeath()
+    {
+        Destroy(gameObject);
+        eventsystem.GetComponent<EventSystem>().numOfPests--;
     }
 }

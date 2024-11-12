@@ -15,20 +15,20 @@ public class PlotScript : MonoBehaviour, IDropHandler
         
         if (eventData != null)
         {
-            itemScript draggableItem = eventData.pointerDrag.GetComponent<itemScript>();
-            if (!hasPlant)
+            
+            if (eventData.pointerDrag.GetComponent<SeedScript>() != null && !hasPlant)
             {
-                SeedDrop(draggableItem);
+                SeedDrop(eventData.pointerDrag.GetComponent<SeedScript>());
    
-            } else  {
-                if (draggableItem.shovel)
+            } else if (hasPlant) {
+                if (eventData.pointerDrag.GetComponent<ShovelScript>())
                 {
                     ShovelDrop();
 
-                } else if (draggableItem.wateringCan)
+                } else if (eventData.pointerDrag.GetComponent<WateringCanScript>())
                 {
                     WateringCanDrop();
-                } else if (draggableItem.fertilizer)
+                } else if (eventData.pointerDrag.GetComponent<FertilizerScript>())
                 {
                     FertilizerDrop();
                 }
@@ -36,7 +36,7 @@ public class PlotScript : MonoBehaviour, IDropHandler
         }
     }
 
-    public void SeedDrop(itemScript draggableItem)
+    public void SeedDrop(SeedScript draggableItem)
     {
         if (draggableItem.plant != null)
         {
@@ -44,6 +44,7 @@ public class PlotScript : MonoBehaviour, IDropHandler
             plant = plantObject.GetComponent<PlantScript>();
             plant.originalPlant = false;
             plant.eventSystem.GetComponent<StatsScript>().seedPlanted++;
+            plant.eventSystem.GetComponent<EventSystem>().numOfPlants++;
         }
     }
     public void WateringCanDrop()
@@ -53,7 +54,7 @@ public class PlotScript : MonoBehaviour, IDropHandler
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered = true;
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().waterTimer = transform.GetChild(0).gameObject.GetComponent<PlantScript>().timeUntilWater;
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyWP = false;
-            //transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+            
             Destroy(transform.GetChild(0).Find("WaterIndicator(Clone)").gameObject);
             Debug.Log("Successfully Watered");
         }
@@ -62,7 +63,7 @@ public class PlotScript : MonoBehaviour, IDropHandler
     public void ShovelDrop()
     {
         Debug.Log("Plant Destroyed");
-
+        plant.eventSystem.GetComponent<EventSystem>().numOfPlants--;
         Destroy(transform.GetChild(0).gameObject);
     }
 
@@ -71,9 +72,8 @@ public class PlotScript : MonoBehaviour, IDropHandler
         if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized)
         {
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
-            //transform.GetChild(0).gameObject.GetComponent<PlantScript>().fertilizeTimer = transform.GetChild(0).gameObject.GetComponent<PlantScript>().timeUntilFertilized;
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyFP = false;
-            //transform.GetChild(0).gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+            
             Destroy(transform.GetChild(0).Find("FertilizeIndicator(Clone)").gameObject);
             Debug.Log("Successfully Fertilized");
         }

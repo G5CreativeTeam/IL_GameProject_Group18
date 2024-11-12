@@ -33,7 +33,7 @@ public class SettingScript : MonoBehaviour
     public void SetVolume(float value)
     {
         
-        audioMixer.SetFloat("volume", value);
+        audioMixer.SetFloat("Volume", value);
         Debug.Log($"SetVolume successful!{value}");
     }
 
@@ -80,7 +80,7 @@ public class SettingScript : MonoBehaviour
 
     private void Save()
     {
-        PlayerPrefs.SetFloat("volume", audioSlider.value);
+        PlayerPrefs.SetFloat("Volume", audioSlider.value);
         PlayerPrefs.SetInt("quality", graphicDropdown.value);
         PlayerPrefs.SetInt("fullscreen", fullscreenToggle.isOn?1:0);
         PlayerPrefs.SetInt("resolution",resolutionDropdown.value);
@@ -89,9 +89,9 @@ public class SettingScript : MonoBehaviour
 
     private void Load()
     {
-        if (PlayerPrefs.HasKey("volume"))
+        if (PlayerPrefs.HasKey("Volume"))
         {
-            float volume = PlayerPrefs.GetFloat("volume");
+            float volume = PlayerPrefs.GetFloat("Volume");
             audioSlider.SetValueWithoutNotify(volume);
             SetVolume(volume);
             Debug.Log("Volume Loaded!");

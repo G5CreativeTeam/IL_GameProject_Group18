@@ -40,6 +40,15 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         //fertilizeTimer = timeUntilFertilized;
         if (!originalPlant)
         {
+            if (!isWatered || !isFertilized)
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(0.4f, 0.4f, 0.4f, 1);
+            }
+            else
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+            }
+
             if (waterTimer <= 0 && !currentlyWP && NotLastPhase() || !isWatered && !currentlyWP && NotLastPhase())
             {
                 WaterPhase();
@@ -64,6 +73,14 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
 
         if (!originalPlant && NotLastPhase()) {
 
+            if (!isWatered || !isFertilized)
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(0.4f, 0.4f, 0.4f, 1);
+            } else
+            {
+                gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
+            }
+            
             if (waterTimer <= 0 && !currentlyWP || !isWatered && !currentlyWP)
             {
                 WaterPhase();
