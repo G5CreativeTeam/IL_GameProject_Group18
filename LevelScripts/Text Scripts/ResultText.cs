@@ -14,7 +14,7 @@ public class ResultText : MonoBehaviour
 
     void Start()
     {
-        if (eventSystem.GetComponent<EventSystem>().target == eventSystem.GetComponent<StatsScript>().moneyAvailable)
+        if (eventSystem.GetComponent<EventSystem>().target <= eventSystem.GetComponent<StatsScript>().moneyAvailable)
         {
             ResultMessage = "You Won!";
         } else

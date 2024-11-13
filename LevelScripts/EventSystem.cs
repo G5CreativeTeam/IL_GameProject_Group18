@@ -36,7 +36,7 @@ public class EventSystem : MonoBehaviour
     private void Start()
     {
         elapsedTime = 0.0f;
-        Time.timeScale = 1.0f;
+        StartTime();
         StartCoroutine(StartCountdown());
         
     }
@@ -89,19 +89,39 @@ public class EventSystem : MonoBehaviour
 
     public void StopGame()
     {
-        Time.timeScale = 0;
+        StopTime();
         gameOngoing = false;
     }
 
     public void StartGame()
     {
-        Time.timeScale = 1;
+        StartTime();
         gameOngoing = true;
     }
 
-    public void ExitToMainMenu()
+    public void StartTime()
+    {
+        Time.timeScale = 1;
+    }
+
+    public void StopTime()
+    {
+        Time.timeScale = 0;
+    }
+
+    public void QuitToMainMenu()
     {
         SceneManager.LoadSceneAsync(0);
+    }
+
+    public void EndGame()
+    {
+        elapsedTime = (levelTime + 1) - 5;
+    }
+
+    public void ExitGame()
+    {
+        Application.Quit();
     }
 
     public void RestartGame()

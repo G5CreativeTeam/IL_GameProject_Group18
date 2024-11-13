@@ -17,7 +17,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public float growthTime = 10.0f;
     public float timeUntilWater = 5.0f;
     public float timeUntilFertilized = 10.0f;
-    public int health = 1000;
+    public int health = 20;
     public int sellPrice = 200;
     public int scoreValue = 20;
 
@@ -95,6 +95,11 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
                 growthTimer = growthTime;
             }
         }
+        if (health == 0)
+        {
+            gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
+            Destroy(gameObject);
+        }
     }
 
     public void GrowNext()
@@ -153,6 +158,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public void TakeDamage(int amount)
     {
         health -= amount;
+        Debug.Log($"OUCH!{health}");
     }
 
     public bool NotLastPhase()

@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     public int maxHealth = 10;
+    public float attackRate = 2;
     public int damage = 2;
     public int speed = 3;
     public int size = 1;
@@ -15,15 +16,19 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     public GameObject eventsystem;
 
     [HideInInspector] public bool originalPest = true;
+    [HideInInspector] public bool isCurrentlyColliding;
 
     private PointerEventData _lastPointerData;
     private GameObject draggedPest;
     private CanvasGroup canvasGroup;
     private float distance;
     private bool newSpawn = true;
+    private float attackTimer;
+    private Collision2D collidedObject;
 
     public void Start()
     {
+        attackTimer = 0;
         FindNearestPlant();
     }
 
@@ -35,9 +40,19 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
             newSpawn = false;
             
         }
-            if (target != null && !originalPest)
+            if (target != null && !originalPest && gameObject)
         {
             TowardsPlant(target);
+        }
+            if (isCurrentlyColliding)
+        {
+            attackTimer += Time.deltaTime;
+            if (attackTimer >= attackRate)
+            {
+                collidedObject.gameObject.GetComponent<PlantScript>().TakeDamage(damage);
+                attackTimer = 0;
+            }
+            
         }
         
         
@@ -45,14 +60,19 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         
     }
 
-    public void OnCollisionEnter2D(Collision2D collision)
+    
+    public void OnCollisionEnter2D(Collision2D col)
     {
-        Debug.Log("Collided");
-        if (collision.gameObject.CompareTag("Plant"))
-        {
-            Debug.Log("Ow!");
-            collision.gameObject.GetComponent<PlantScript>().TakeDamage(damage);
-        }
+        Debug.Log("CHeck");
+        collidedObject = col;
+        isCurrentlyColliding = true;
+    }
+
+    public void OnCollisionExit2D(Collision2D col)
+    {
+        
+        isCurrentlyColliding = false;
+        collidedObject = null;
     }
 
     public void TowardsPlant(GameObject target)
@@ -113,7 +133,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         canvasGroup.blocksRaycasts = true;
         if (Camera.main.WorldToViewportPoint(gameObject.transform.position).x < 0 && !newSpawn)
         {
-            Destroy(gameObject);
+            PestDeath();
         }
     }
 
@@ -122,7 +142,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         if (draggedPest != null)
         {
             draggedPest.transform.position = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y,transform.position.z);
-            Debug.Log("Just Checking");
+            
         }
         else
         {
