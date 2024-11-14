@@ -11,6 +11,8 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     public int damage = 2;
     public int speed = 3;
     public int size = 1;
+    public float dragForceMultiplier = 500f;
+    public float dragDamping = 0.98f;
 
     public GameObject target;
     public GameObject eventsystem;
@@ -25,9 +27,15 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     private bool newSpawn = true;
     private float attackTimer;
     private Collision2D collidedObject;
+    private bool isDragged = false;
+
+    private Vector3 lastPosition;
+    private Vector3 throwDirection;
+    private Rigidbody2D rb;
 
     public void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
         attackTimer = 0;
         FindNearestPlant();
     }
@@ -38,13 +46,12 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         if (newSpawn && Camera.main.WorldToViewportPoint(gameObject.transform.position).x > 0)
         {
             newSpawn = false;
-            
         }
-            if (target != null && !originalPest && gameObject)
+        if (target != null && !originalPest && !isDragged)
         {
             TowardsPlant(target);
         }
-            if (isCurrentlyColliding)
+        if (isCurrentlyColliding)
         {
             attackTimer += Time.deltaTime;
             if (attackTimer >= attackRate)
@@ -52,25 +59,25 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
                 collidedObject.gameObject.GetComponent<PlantScript>().TakeDamage(damage);
                 attackTimer = 0;
             }
-            
         }
-        
-        
-        
-        
+        if (PestOutOfScreen() && !newSpawn)
+        {
+            PestDeath();
+        }
+
+        // Gradually decrease the speed of the throw by applying damping to the velocity
+        rb.velocity *= dragDamping;
     }
 
-    
     public void OnCollisionEnter2D(Collision2D col)
     {
-        Debug.Log("CHeck");
+        Debug.Log("Check");
         collidedObject = col;
         isCurrentlyColliding = true;
     }
 
     public void OnCollisionExit2D(Collision2D col)
     {
-        
         isCurrentlyColliding = false;
         collidedObject = null;
     }
@@ -78,7 +85,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     public void TowardsPlant(GameObject target)
     {
         distance = Vector2.Distance(transform.position, target.transform.position);
-        
+
         if (target != null)
         {
             transform.position = Vector2.MoveTowards(this.transform.position, target.transform.position, (eventsystem.GetComponent<EventSystem>().pestSpeedMultiplier * speed) * Time.deltaTime);
@@ -96,8 +103,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         {
             Vector3 viewportPos = mainCamera.WorldToViewportPoint(plant.transform.position);
 
-            // Check if the plant is within the screen bounds (visible in the camera view)
-            if ((viewportPos.x >= 0 && viewportPos.x <= 1) && (viewportPos.y >= 0 && viewportPos.y <= 1 ))
+            if ((viewportPos.x >= 0 && viewportPos.x <= 1) && (viewportPos.y >= 0 && viewportPos.y <= 1))
             {
                 float distance = Vector2.Distance(transform.position, plant.transform.position);
                 if (distance < nearestDistance)
@@ -108,15 +114,12 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
             }
         }
         return targetPlant;
-
-      
     }
+
     public void AttackPlant()
     {
-
+        // Placeholder for AttackPlant logic
     }
-
-
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -124,25 +127,36 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         canvasGroup = draggedPest.GetComponent<CanvasGroup>();
         canvasGroup.blocksRaycasts = false;
         Debug.Log("Drag starts!");
+
+        lastPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        lastPosition.z = transform.position.z;
+        isDragged = true;
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        draggedPest.transform.position = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y, transform.position.z);
+        Vector3 endPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        endPosition.z = transform.position.z;
+        throwDirection = (endPosition - lastPosition).normalized;
+
+        rb.AddForce(throwDirection * dragForceMultiplier);
+
+        Debug.Log("Throw direction: " + throwDirection);
+        isDragged = false;
         Debug.Log("Ended");
+
         canvasGroup.blocksRaycasts = true;
-        if (Camera.main.WorldToViewportPoint(gameObject.transform.position).x < 0 && !newSpawn)
-        {
-            PestDeath();
-        }
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (draggedPest != null)
         {
-            draggedPest.transform.position = new Vector3(Camera.main.ScreenToWorldPoint(Input.mousePosition).x, Camera.main.ScreenToWorldPoint(Input.mousePosition).y,transform.position.z);
-            
+            Vector3 currentMousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            currentMousePosition.z = transform.position.z;
+            draggedPest.transform.position = currentMousePosition;
+
+            lastPosition = currentMousePosition;
         }
         else
         {
@@ -156,8 +170,6 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         if (_lastPointerData != null)
         {
             _lastPointerData.pointerDrag = null;
-
-            // Reset position here
         }
     }
 
@@ -165,5 +177,16 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         Destroy(gameObject);
         eventsystem.GetComponent<EventSystem>().numOfPests--;
+    }
+
+    public bool PestOutOfScreen()
+    {
+        Bounds bounds = GetComponent<Collider2D>().bounds;
+        Camera mainCamera = Camera.main;
+
+        Vector3 minViewport = mainCamera.WorldToViewportPoint(bounds.min);
+        Vector3 maxViewport = mainCamera.WorldToViewportPoint(bounds.max);
+
+        return maxViewport.x < 0 || minViewport.x > 1 || maxViewport.y < 0 || minViewport.y > 1;
     }
 }
