@@ -13,9 +13,13 @@ public class PestSpawnerScript : MonoBehaviour
 
     public GameObject eventSystem;
     public GameObject[] pests;
-    
+    public GameObject[] spawnPoints;
+
+    private int randomPoint ;
+
     void Start()
     {
+        
         pestMax = eventSystem.GetComponent<EventSystem>().pestMax;
         pestRate = eventSystem.GetComponent<EventSystem>().pestSpawnRate;
         
@@ -25,18 +29,20 @@ public class PestSpawnerScript : MonoBehaviour
     void Update()
     {
         timer += Time.deltaTime;
+        randomPoint = Random.Range(0, spawnPoints.Length);
+        
         if (timer >= pestRate && eventSystem.GetComponent<EventSystem>().numOfPests < pestMax && eventSystem.GetComponent<EventSystem>().numOfPlants > 0)
         {
-            SpawnPest();
+            SpawnPest(spawnPoints[randomPoint].transform);
             timer = 0;
         }
 
     }
 
-    void SpawnPest()
+    void SpawnPest(Transform point)
     {
         int randomNum = Random.Range(0, pests.Length);
-        GameObject pest = Instantiate(pests[randomNum],transform.position,new Quaternion(0,0,0,0),transform.parent);
+        GameObject pest = Instantiate(pests[randomNum],point.position,new Quaternion(0,0,0,0),point.parent);
         pest.GetComponent<PestScript>().originalPest = false;
         eventSystem.GetComponent<EventSystem>().numOfPests++;
     }

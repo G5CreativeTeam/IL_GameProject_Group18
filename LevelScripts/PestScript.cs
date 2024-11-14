@@ -43,7 +43,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     public void Update()
     {
         target = FindNearestPlant();
-        if (newSpawn && Camera.main.WorldToViewportPoint(gameObject.transform.position).x > 0)
+        if (newSpawn && !PestOutOfScreen())
         {
             newSpawn = false;
         }
@@ -62,6 +62,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         }
         if (PestOutOfScreen() && !newSpawn)
         {
+            
             PestDeath();
         }
 
@@ -71,7 +72,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnCollisionEnter2D(Collision2D col)
     {
-        Debug.Log("Check");
+        
         collidedObject = col;
         isCurrentlyColliding = true;
     }
@@ -141,9 +142,9 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
         rb.AddForce(throwDirection * dragForceMultiplier);
 
-        Debug.Log("Throw direction: " + throwDirection);
+        
         isDragged = false;
-        Debug.Log("Ended");
+
 
         canvasGroup.blocksRaycasts = true;
     }
@@ -161,7 +162,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         else
         {
             CancelDrag();
-            Debug.Log("You're cancelled");
+   
         }
     }
 
@@ -177,6 +178,7 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         Destroy(gameObject);
         eventsystem.GetComponent<EventSystem>().numOfPests--;
+       
     }
 
     public bool PestOutOfScreen()
