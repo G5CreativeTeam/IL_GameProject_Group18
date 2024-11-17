@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -13,11 +14,13 @@ public class SeedScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     //public Image image;
     private CanvasGroup canvasGroup;
     private PointerEventData _lastPointerData;
+    
 
 
     //private Vector3 myPosition = transform.position;
     [HideInInspector] public Transform parentAfterDrag;
 
+    
     public void OnBeginDrag(PointerEventData eventData)
     {
 

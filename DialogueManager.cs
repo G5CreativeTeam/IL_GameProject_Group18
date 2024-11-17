@@ -1,32 +1,30 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+
 
 public class DialogueManager : MonoBehaviour
 {
+
     public TextMeshProUGUI nameText;
     public TextMeshProUGUI dialogueText;
-    public float textSpeed = 1.0f;
-    
-    [HideInInspector] public Queue<string> sentences;
-    // Start is called before the first frame update
+
+
+
+    private Queue<string> sentences;
+
+    // Use this for initialization
     void Start()
     {
         sentences = new Queue<string>();
     }
 
-    private void Update()
-    {
-        
-
-    }
-
     public void StartDialogue(Dialogue dialogue)
     {
 
-        Debug.Log("Check");
+
         nameText.text = dialogue.name;
 
         sentences.Clear();
@@ -48,24 +46,22 @@ public class DialogueManager : MonoBehaviour
         }
 
         string sentence = sentences.Dequeue();
-        dialogueText.text = sentence;
         StopAllCoroutines();
         StartCoroutine(TypeSentence(sentence));
     }
 
-    IEnumerator TypeSentence (string sentence)
+    IEnumerator TypeSentence(string sentence)
     {
         dialogueText.text = "";
         foreach (char letter in sentence.ToCharArray())
         {
             dialogueText.text += letter;
-            yield return new WaitForSeconds(textSpeed);
+            yield return null;
         }
     }
 
     void EndDialogue()
     {
-        Debug.Log("End Of Conversation");
     }
-   
+
 }
