@@ -7,34 +7,50 @@ using UnityEngine.EventSystems;
 public class SeedScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
 {
     private GameObject dragCopy;
-    public GameObject eventSystem;
+    [Header("Related Objects")]
+    public GameObject levelProperties;
     public GameObject plant;
-    public int price = 100;
 
+    [Header("Properties")]
+    public int price = 100;
+    public float cooldownTime = 0;
     //public Image image;
+
     private CanvasGroup canvasGroup;
     private PointerEventData _lastPointerData;
-    
 
 
     //private Vector3 myPosition = transform.position;
+    [HideInInspector] public float cooldownTimer;
     [HideInInspector] public Transform parentAfterDrag;
 
-    
+    public void Start()
+    {
+        cooldownTimer = cooldownTime;
+    }
+
+    public void Update()
+    {
+        if (cooldownTimer < cooldownTime)
+        {
+            cooldownTimer += Time.deltaTime;
+        }
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
 
         dragCopy = Instantiate(gameObject, transform);
 
-        StatsScript money = eventSystem.GetComponent<StatsScript>();
+        StatsScript money = levelProperties.GetComponent<StatsScript>();
         
 
-        if (money.moneyAvailable >= price)
+        if (money.moneyAvailable >= price && cooldownTimer >= cooldownTime)
         {
 
             canvasGroup = dragCopy.GetComponent<CanvasGroup>();
 
-            dragCopy.transform.SetParent(dragCopy.transform.parent, false);
+            //dragCopy.transform.SetParent(dragCopy.transform.parent, false);
 
             RectTransform originalRect = GetComponent<RectTransform>();
             RectTransform cloneRect = dragCopy.GetComponent<RectTransform>();
@@ -49,6 +65,7 @@ public class SeedScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
                 canvasGroup.blocksRaycasts = false;
                 canvasGroup.alpha = 0.5F;
+                //cooldownTimer = 0;
             }
 
             //image.raycastTarget = false;
@@ -57,9 +74,8 @@ public class SeedScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         }
         else
         {
-            Debug.Log("Not enough money!");
+            Debug.Log("Unable to plant!");
             Destroy(dragCopy);
-
         }
 
 
@@ -74,6 +90,7 @@ public class SeedScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         else
         {
             CancelDrag();
+            eventData = null;
         }
     }
 
@@ -88,15 +105,16 @@ public class SeedScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     }
     public void OnEndDrag(PointerEventData eventData)
     {
-        StatsScript money = eventSystem.GetComponent<StatsScript>();
+        StatsScript money = levelProperties.GetComponent<StatsScript>();
         
 
         if (dragCopy != null)
         {
+            
             if (eventData.pointerEnter.GetComponent<PlotScript>() != null && eventData.pointerEnter.GetComponent<PlotScript>().hasPlant == false)
             {
-                Debug.Log("Planted succesfully");
-                money.moneyAvailable = money.deductAmount(price, money.moneyAvailable);
+                
+                
                 eventData.pointerEnter.GetComponent<PlotScript>().hasPlant = true;
             }
             Destroy(dragCopy);

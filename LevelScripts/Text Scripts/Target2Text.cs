@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-
-public class TargetTextScript : MonoBehaviour
+public class Target2Text : MonoBehaviour
 {
     // Start is called before the first frame update
     public GameObject eventSystem;
@@ -16,7 +15,7 @@ public class TargetTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<LevelProperties>().target;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"{text}\n{printedNumber}";
+        textMeshPro.text = $"{printedNumber}";
 
     }
 
@@ -25,7 +24,6 @@ public class TargetTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<LevelProperties>().target;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"Objective:\n{printedNumber}";
+        textMeshPro.text = $"{printedNumber}";
     }
-
 }

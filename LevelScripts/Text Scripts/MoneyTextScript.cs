@@ -16,16 +16,22 @@ public class MoneyTextScript : MonoBehaviour
     {
         printedNumber = eventSystem.GetComponent<StatsScript>().moneyAvailable;
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"Rp{printedNumber}";
+        textMeshPro.text = $"{printedNumber}";
 
     }
 
     // Update is called once per frame
     void Update()
     {
+        
         printedNumber = eventSystem.GetComponent<StatsScript>().moneyAvailable;
+        if (printedNumber <= 0)
+        {
+            printedNumber = 0;
+        }
         textMeshPro = GetComponent<TextMeshProUGUI>();
-        textMeshPro.text = $"Rp{printedNumber}";
+        textMeshPro.text = $"{printedNumber}";
+
     }
 
 }

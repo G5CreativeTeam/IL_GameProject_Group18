@@ -1,41 +1,81 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class PlotScript : MonoBehaviour, IDropHandler
+public class PlotScript : MonoBehaviour, IDataPersistence
 {
-    public bool hasPlant = false;
-    private PlantScript plant;
+    [SerializeField] private string id;
 
-    private GameObject plantObject;
-    public void OnDrop(PointerEventData eventData)
+    [ContextMenu("Generate guid for id")]
+    private void GenerateGuid()
     {
-        hasPlant = transform.childCount > 0;
-        
-        if (eventData != null)
-        {
-            
-            if (eventData.pointerDrag.GetComponent<SeedScript>() != null && !hasPlant)
-            {
-                SeedDrop(eventData.pointerDrag.GetComponent<SeedScript>());
-   
-            } else if (hasPlant) {
-                if (eventData.pointerDrag.GetComponent<ShovelScript>())
-                {
-                    ShovelDrop();
+        id = System.Guid.NewGuid().ToString();
+    }
+    [Header("Sprites")]
+    public Sprite DryLand;
+    public Sprite WetLand;
 
-                } else if (eventData.pointerDrag.GetComponent<WateringCanScript>())
-                {
-                    WateringCanDrop();
-                } else if (eventData.pointerDrag.GetComponent<FertilizerScript>())
-                {
-                    FertilizerDrop();
-                }
+
+    [Header("Audio")]
+    public GameObject shovelAudio;
+    public GameObject plantAudio;
+    public GameObject waterAudio;
+    public GameObject fertilizerAudio;
+
+    [HideInInspector] public bool hasPlant;
+
+    private PlantScript plant;
+    public GameObject plantObject;
+    //private class plantData
+    //{
+    //    [HideInInspector] public bool originalPlant = true;
+    //    [HideInInspector] public bool isWatered;
+    //    [HideInInspector] public bool isFertilized;
+    //    [HideInInspector] public bool currentlyWP;
+    //    [HideInInspector] public bool currentlyFP;
+    //    [HideInInspector] public float growthTimer, waterTimer;
+
+    //    [Header("Growth Setting")]
+    //    public float firstGrowthTime;
+    //    public float secondGrowthTime;
+
+    //    public float timeUntilWater;
+    //    public float timeUntilFertilized;
+
+    //    [Header("Attributes")]
+    //    public int health;
+    //    public int sellPrice;
+    //    public int scoreValue ;
+    //    public Sprite[] plantSprite;
+
+
+    //    [Header("Indicators")]
+    //    public GameObject waterIndicator;
+    //    public GameObject fertilizeIndicator;
+
+    //    [Header("Audio")]
+    //    public GameObject growAudio;
+    //    public GameObject sellAudio;
+
+    //    private int currentGrowthPhase = 0;
+    //}
+    public void Update()
+    {
+        if (hasPlant && plantObject != null) 
+        { 
+            if (plantObject.GetComponent<PlantScript>().isWatered && gameObject.GetComponent<SpriteRenderer>().sprite != WetLand)
+            {
+                gameObject.GetComponent<SpriteRenderer>().sprite = WetLand;
+            } else if ( !plantObject.GetComponent<PlantScript>().isWatered)
+            {
+                gameObject.GetComponent<SpriteRenderer>().sprite = DryLand;
             }
         }
     }
-
+    
     public void SeedDrop(SeedScript draggableItem)
     {
         if (draggableItem.plant != null)
@@ -43,8 +83,15 @@ public class PlotScript : MonoBehaviour, IDropHandler
             plantObject = Instantiate(draggableItem.plant, transform);
             plant = plantObject.GetComponent<PlantScript>();
             plant.originalPlant = false;
+            plantAudio.GetComponent<AudioSource>().Play();
             plant.eventSystem.GetComponent<StatsScript>().seedPlanted++;
-            plant.eventSystem.GetComponent<EventSystem>().numOfPlants++;
+            plant.eventSystem.GetComponent<StatsScript>().numOfPlants++;
+            draggableItem.cooldownTimer = 0;
+            if (!LevelProperties.Instance.unlimitedMoney)
+            {
+                LevelProperties.Instance.GetComponent<StatsScript>().DeductAmount(draggableItem.price);
+            }
+            
         }
     }
     public void WateringCanDrop()
@@ -52,19 +99,24 @@ public class PlotScript : MonoBehaviour, IDropHandler
         if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered)
         {
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered = true;
-            transform.GetChild(0).gameObject.GetComponent<PlantScript>().waterTimer = transform.GetChild(0).gameObject.GetComponent<PlantScript>().timeUntilWater;
+
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyWP = false;
-            
+            waterAudio.GetComponent<AudioSource>().Play();
             Destroy(transform.GetChild(0).Find("WaterIndicator(Clone)").gameObject);
-            Debug.Log("Successfully Watered");
+            
         }
     }
 
     public void ShovelDrop()
     {
-        Debug.Log("Plant Destroyed");
-        plant.eventSystem.GetComponent<EventSystem>().numOfPlants--;
+        
+        
+        shovelAudio.GetComponent<AudioSource>().Play();
+        plant.eventSystem.GetComponent<StatsScript>().numOfPlants--;
         Destroy(transform.GetChild(0).gameObject);
+        hasPlant = false;
+        gameObject.GetComponent<SpriteRenderer>().sprite = DryLand;
+
     }
 
     public void FertilizerDrop()
@@ -73,10 +125,72 @@ public class PlotScript : MonoBehaviour, IDropHandler
         {
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyFP = false;
-            
+            fertilizerAudio.GetComponent<AudioSource>().Play();
             Destroy(transform.GetChild(0).Find("FertilizeIndicator(Clone)").gameObject);
-            Debug.Log("Successfully Fertilized");
+            //Instantiate(fertilizer,transform);
+            
         }
     }
 
+    public void LoadData(GameData gameData)
+    {
+        
+        plotData matchingPlot = gameData.plotList.Find(plot => plot.id == id);
+        //Debug.Log("Is it null or not?"+matchingPlot == null);
+        //Debug.Log("is the list empty?" + gameData.plotList.Count);
+        //Debug.Log(matchingPlot);
+        if (matchingPlot != null)
+        {
+            hasPlant = matchingPlot.hasPlant;
+            plantObject = matchingPlot.plantObject;
+            if (plantObject != null)
+            {
+                Instantiate(plantObject, transform);
+            }
+            plant = matchingPlot.plant;
+            
+        } else
+        {
+            hasPlant = false;
+            plant = null;
+            plantObject = null;
+        }
+
+
+    }
+
+    public void SaveData(ref GameData gameData)
+    {
+        plotData plotSave = new plotData();
+        
+        plotSave.id = id;
+        plotSave.hasPlant = hasPlant;
+        plotSave.plant = plant;
+        plotSave.plantObject = plantObject;
+
+        plotData matchingPlot = gameData.plotList.Find(plot => plot.id == id);
+
+        if (matchingPlot != null)
+        {
+            matchingPlot.hasPlant = plotSave.hasPlant;
+            matchingPlot.plantObject = plotSave.plantObject;
+            matchingPlot.plant = plotSave.plant;
+            
+        }
+        else
+        {
+            List<plotData> list = new List<plotData>();
+            list.Add(plotSave);
+            
+            gameData.plotList.Add(plotSave);
+            foreach (plotData plotData in gameData.plotList)
+            {
+                Debug.Log(plotData.hasPlant);
+            }
+            
+            
+        }
+
+        
+    }
 }

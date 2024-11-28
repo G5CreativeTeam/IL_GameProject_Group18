@@ -3,84 +3,111 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class WateringCanScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
+public class WateringCanScript : MonoBehaviour, IPointerClickHandler
 {
-    [HideInInspector] public GameObject dragCopy;
     public GameObject eventSystem;
     public int price = 0;
+    [SerializeField] private KeyCode shortcutKey = KeyCode.Q;
 
-    //public Image image;
+    private bool isFollowingMouse = false;
     private CanvasGroup canvasGroup;
-    private PointerEventData _lastPointerData;
+    private StatsScript money;
 
+    private Vector3 initialPosition; // Store the initial position of the fertilizer
 
-    //private Vector3 myPosition = transform.position;
-    [HideInInspector] public Transform parentAfterDrag;
+    private void Start()
+    {
+        canvasGroup = GetComponent<CanvasGroup>();
+        money = eventSystem.GetComponent<StatsScript>();
+        initialPosition = transform.position; // Save the initial position
+    }
 
-    public void OnBeginDrag(PointerEventData eventData)
+    private void Update()
+    {
+        if (!LevelProperties.Instance.isCarryingObject && Input.GetKeyDown(shortcutKey))
+        {
+            AttemptPickup();
+        }
+        if (isFollowingMouse)
+        {
+            FollowMouse();
+        }
+    }
+
+    private void FollowMouse()
+    {
+        // Make the fertilizer follow the mouse position
+        transform.position = Input.mousePosition;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
     {
 
-        dragCopy = gameObject;
+        if (!LevelProperties.Instance.isCarryingObject && !isFollowingMouse)
+        {
+            AttemptPickup();
+            Debug.Log("Check 1");
+        }
+        else
+        {
+            DropWateringCan();
+            Debug.Log("Check 2");
+        }
+    }
 
-        StatsScript money = eventSystem.GetComponent<StatsScript>();
-
+    private void AttemptPickup()
+    {
         if (money.moneyAvailable >= price)
         {
-
-            canvasGroup = dragCopy.GetComponent<CanvasGroup>();
-
-            if (dragCopy != null)
-            {
-                parentAfterDrag = dragCopy.transform.parent;
-                //dragCopy.transform.SetParent(transform.root);
-                //dragCopy.transform.SetAsLastSibling();
-
-                canvasGroup.blocksRaycasts = false;
-                canvasGroup.alpha = 0.5F;
-            }
-
-            //image.raycastTarget = false;
-            _lastPointerData = eventData;
-
+            isFollowingMouse = true;
+            LevelProperties.Instance.isCarryingObject = true;
+            canvasGroup.alpha = 0.5f;
+            canvasGroup.blocksRaycasts = true; // Allow interaction during dragging
         }
         else
         {
             Debug.Log("Not enough money!");
-            CancelDrag();
-
         }
-
-
     }
 
-    public void OnDrag(PointerEventData eventData)
+    private void DropWateringCan()
     {
-        if (dragCopy != null)
+        // Convert mouse position to world position
+        Vector2 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        // Perform a 2D raycast
+        RaycastHit2D hit = Physics2D.Raycast(mouseWorldPosition, Vector2.zero);
+        Debug.Log("Check");
+        if (hit.collider != null)
         {
-            dragCopy.transform.position = Input.mousePosition;
+            // Check if the hit object has the PlotScript component
+            PlotScript plot = hit.collider.GetComponent<PlotScript>();
+            if (plot != null && plot.hasPlant)
+            {
+                Debug.Log("Dropped on a valid plot!");
+                LevelProperties.Instance.isCarryingObject = false;
+
+                // Reset dragging state
+                isFollowingMouse = false;
+                canvasGroup.alpha = 1f;
+                canvasGroup.blocksRaycasts = true;
+                plot.WateringCanDrop();
+                // Handle successful drop logic here (e.g., planting, deducting money, etc.)
+                // Exit to avoid resetting position
+            }
+            else
+            {
+                Debug.Log("Not a valid plot.");
+            }
         }
-        else
-        {
-            CancelDrag();
-        }
+
+        // Reset the fertilizer to its original position if not dropped on a valid plot
+        transform.position = initialPosition;
+        isFollowingMouse = false;
+        canvasGroup.alpha = 1f;
+        canvasGroup.blocksRaycasts = true;
+        LevelProperties.Instance.isCarryingObject = false;
+
     }
 
-    public void CancelDrag()
-    {
-        if (_lastPointerData != null)
-        {
-            _lastPointerData.pointerDrag = null;
-
-            // Reset position here
-        }
-    }
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        if (dragCopy != null)
-        {
-            dragCopy.transform.position = parentAfterDrag.position;
-            canvasGroup.alpha = 1F;
-            canvasGroup.blocksRaycasts = true;
-        }
-    }
 }

@@ -1,0 +1,21 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CharacterResultScript : MonoBehaviour
+{
+    public GameObject WinCharacter;
+    public GameObject LoseCharacter;
+    public GameObject eventSystem;
+    // Start is called before the first frame update
+    void OnEnable()
+    {
+        if (eventSystem.GetComponent<LevelProperties>().target <= eventSystem.GetComponent<StatsScript>().moneyAvailable) {
+            WinCharacter.SetActive(true);
+        } else
+        {
+            LoseCharacter.SetActive(true);
+        }
+
+    }
+}

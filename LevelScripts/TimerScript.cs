@@ -11,14 +11,14 @@ public class TimerScript : MonoBehaviour
     // Update is called once per frame
     private void Start()
     {
-        remainingTime = EventSystem.GetComponent<EventSystem>().levelTime+1;
+        remainingTime = EventSystem.GetComponent<LevelProperties>().levelTime+1;
     }
 
     void Update()
     {
         if (remainingTime > 0)
         {
-            remainingTime = (EventSystem.GetComponent<EventSystem>().levelTime) - EventSystem.GetComponent<EventSystem>().elapsedTime;
+            remainingTime = (EventSystem.GetComponent<LevelProperties>().levelTime) - EventSystem.GetComponent<LevelProperties>().elapsedTime;
             if (remainingTime <= 6)
             {
                 timerText.color = new Color(0.9F, 0, 0, 1);

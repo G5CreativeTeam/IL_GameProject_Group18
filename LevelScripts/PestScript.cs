@@ -1,37 +1,39 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
-using UnityEngine.EventSystems;
 
-public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
+public class PestScript : MonoBehaviour
 {
+    [Header("Properties")]
     public int maxHealth = 10;
     public float attackRate = 2;
     public int damage = 2;
-    public int speed = 3;
+    public float speed = 3;
     public int size = 1;
-    public float dragForceMultiplier = 500f;
-    public float dragDamping = 0.98f;
+    public float swipeSpeed = 5f;
+    public float minSwipeDistance = 0.5f; // Minimum distance to qualify as a swipe
 
-    public GameObject target;
+    [Header("Audio")]
+    public GameObject attackAudio;
+
     public GameObject eventsystem;
 
+    [HideInInspector] public GameObject target;
     [HideInInspector] public bool originalPest = true;
     [HideInInspector] public bool isCurrentlyColliding;
 
-    private PointerEventData _lastPointerData;
-    private GameObject draggedPest;
-    private CanvasGroup canvasGroup;
-    private float distance;
-    private bool newSpawn = true;
     private float attackTimer;
     private Collision2D collidedObject;
-    private bool isDragged = false;
-
-    private Vector3 lastPosition;
-    private Vector3 throwDirection;
     private Rigidbody2D rb;
+
+    private Vector2 swipeStart;
+    private Vector2 swipeEnd;
+    private bool isSwiping = false;
+    private bool hasSwiped = false;
+    private bool newSpawn = true;
+    private bool isStopped = false; // Tracks if the pest is stopped
+    private bool isSpinning = false; // Tracks if the pest is spinning
+    private float spinDirection = 1f; // 1 for clockwise, -1 for counterclockwise
 
     public void Start()
     {
@@ -42,54 +44,157 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void Update()
     {
+
+        if (isSpinning)
+        {
+            // Rotate the pest indefinitely based on spinDirection
+            transform.Rotate(Vector3.forward * 360 * spinDirection * Time.deltaTime);
+        }
+
+        if (PestOutOfScreen() && !newSpawn)
+        {
+            PestDeath();
+            
+        }
+
+        if (isStopped)
+        {
+            HandleSwipe(); // Allow swiping or resuming movement
+            return; // Skip other behavior while stopped
+        }
+
         target = FindNearestPlant();
+
         if (newSpawn && !PestOutOfScreen())
         {
             newSpawn = false;
+            
         }
-        if (target != null && !originalPest && !isDragged)
+
+        if (target != null && !originalPest && !hasSwiped)
         {
             TowardsPlant(target);
         }
-        if (isCurrentlyColliding)
-        {
-            attackTimer += Time.deltaTime;
-            if (attackTimer >= attackRate)
+        
+        if (isCurrentlyColliding && collidedObject != null )
+        {   
+            if (collidedObject.gameObject.TryGetComponent<PlantScript>(out PlantScript plant))
             {
-                collidedObject.gameObject.GetComponent<PlantScript>().TakeDamage(damage);
-                attackTimer = 0;
+                attackTimer += Time.deltaTime;
+                //isStopped = true; // Stop the pest when found plant
+
+                if (attackTimer >= attackRate)
+                {
+                    attackAudio.GetComponent<AudioSource>().Play();
+
+                    plant.TakeDamage(damage);
+
+                    attackTimer = 0;
+                }
             }
-        }
-        if (PestOutOfScreen() && !newSpawn)
-        {
             
-            PestDeath();
+        } else
+        {
+            isStopped = false;
+            
         }
 
-        // Gradually decrease the speed of the throw by applying damping to the velocity
-        rb.velocity *= dragDamping;
+        
+        
+        if (!newSpawn)
+        {
+            HandleSwipe();
+        }
+
+        FlipSprite();
+    }
+
+    private void HandleSwipe()
+    {
+        if (Input.GetMouseButtonDown(0) && !isSpinning)
+        {
+            swipeStart = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            // Check if the click is on the pest
+            Vector2 clickPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            if (GetComponent<Collider2D>().bounds.Contains(clickPosition))
+            {
+                isStopped = true; // Stop the pest when clicked
+                rb.velocity = Vector2.zero; // Stop its movement
+                isSwiping = true; // Allow for a potential swipe
+            }
+        }
+
+        if (Input.GetMouseButtonUp(0) && isSwiping)
+        {
+            swipeEnd = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            float swipeDistance = Vector2.Distance(swipeStart, swipeEnd);
+
+            if (swipeDistance >= minSwipeDistance)
+            {
+                // This is a valid swipe
+                Vector2 swipeDirection = (swipeEnd - swipeStart).normalized;
+
+                // Set spin direction based on swipe
+                spinDirection = swipeDirection.x > 0 ? -1f : 1f;
+
+                // Apply swipe velocity
+                rb.velocity = swipeDirection * swipeSpeed;
+
+                // diable box collider to ignore collisions
+                GetComponent<BoxCollider2D>().enabled = false;
+
+                hasSwiped = true; // Pest no longer targets plants after being swiped
+
+                // Start spinning after swipe
+                isSpinning = true;
+            }
+            else
+            {
+                // Not a swipe, resume movement
+                isStopped = false;
+            }
+
+            isSwiping = false; // Reset swiping state
+        }
     }
 
     public void OnCollisionEnter2D(Collision2D col)
     {
-        
-        collidedObject = col;
-        isCurrentlyColliding = true;
+        if (!hasSwiped)
+        {
+            collidedObject = col;
+            isCurrentlyColliding = true;
+        }
     }
 
     public void OnCollisionExit2D(Collision2D col)
     {
+       
         isCurrentlyColliding = false;
         collidedObject = null;
+        
+    }
+
+    public void OnMouseOver()
+    {
+        CursorManager.Instance.SetCursorHover();
+    }
+
+    public void OnMouseExit()
+    {
+        CursorManager.Instance.SetCursorDefault();
     }
 
     public void TowardsPlant(GameObject target)
     {
-        distance = Vector2.Distance(transform.position, target.transform.position);
-
         if (target != null)
         {
-            transform.position = Vector2.MoveTowards(this.transform.position, target.transform.position, (eventsystem.GetComponent<EventSystem>().pestSpeedMultiplier * speed) * Time.deltaTime);
+            transform.position = Vector2.MoveTowards(
+                this.transform.position,
+                target.transform.position,
+                (eventsystem.GetComponent<LevelProperties>().pestSpeedMultiplier * speed) * Time.deltaTime
+            );
         }
     }
 
@@ -117,68 +222,10 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         return targetPlant;
     }
 
-    public void AttackPlant()
-    {
-        // Placeholder for AttackPlant logic
-    }
-
-    public void OnBeginDrag(PointerEventData eventData)
-    {
-        draggedPest = gameObject;
-        canvasGroup = draggedPest.GetComponent<CanvasGroup>();
-        canvasGroup.blocksRaycasts = false;
-        Debug.Log("Drag starts!");
-
-        lastPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        lastPosition.z = transform.position.z;
-        isDragged = true;
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
-        Vector3 endPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        endPosition.z = transform.position.z;
-        throwDirection = (endPosition - lastPosition).normalized;
-
-        rb.AddForce(throwDirection * dragForceMultiplier);
-
-        
-        isDragged = false;
-
-
-        canvasGroup.blocksRaycasts = true;
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        if (draggedPest != null)
-        {
-            Vector3 currentMousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            currentMousePosition.z = transform.position.z;
-            draggedPest.transform.position = currentMousePosition;
-
-            lastPosition = currentMousePosition;
-        }
-        else
-        {
-            CancelDrag();
-   
-        }
-    }
-
-    public void CancelDrag()
-    {
-        if (_lastPointerData != null)
-        {
-            _lastPointerData.pointerDrag = null;
-        }
-    }
-
     public void PestDeath()
     {
         Destroy(gameObject);
-        eventsystem.GetComponent<EventSystem>().numOfPests--;
-       
+        eventsystem.GetComponent<StatsScript>().numOfPests--;
     }
 
     public bool PestOutOfScreen()
@@ -190,5 +237,21 @@ public class PestScript : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         Vector3 maxViewport = mainCamera.WorldToViewportPoint(bounds.max);
 
         return maxViewport.x < 0 || minViewport.x > 1 || maxViewport.y < 0 || minViewport.y > 1;
+    }
+
+    private void FlipSprite()
+    {
+        if (target == null || hasSwiped) return; // Skip flipping if already swiped
+
+        if (target.transform.position.x < transform.position.x)
+        {
+            // Target is to the right
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+        }
+        else if (target.transform.position.x > transform.position.x)
+        {
+            // Target is to the left
+            transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+        }
     }
 }
