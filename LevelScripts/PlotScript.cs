@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class PlotScript : MonoBehaviour, IDataPersistence
+public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
 {
     [SerializeField] private string id;
 
@@ -26,9 +26,12 @@ public class PlotScript : MonoBehaviour, IDataPersistence
     public GameObject fertilizerAudio;
 
     [HideInInspector] public bool hasPlant;
+    [HideInInspector] public GameObject plantObject;
+    [HideInInspector] public bool toolActive;
 
     private PlantScript plant;
-    public GameObject plantObject;
+
+
     //private class plantData
     //{
     //    [HideInInspector] public bool originalPlant = true;
@@ -61,7 +64,13 @@ public class PlotScript : MonoBehaviour, IDataPersistence
     //    public GameObject sellAudio;
 
     //    private int currentGrowthPhase = 0;
+
     //}
+    public void Start()
+    {
+        toolActive = false;
+    }
+
     public void Update()
     {
         if (hasPlant && plantObject != null) 
@@ -84,13 +93,15 @@ public class PlotScript : MonoBehaviour, IDataPersistence
             plant = plantObject.GetComponent<PlantScript>();
             plant.originalPlant = false;
             plantAudio.GetComponent<AudioSource>().Play();
-            plant.eventSystem.GetComponent<StatsScript>().seedPlanted++;
-            plant.eventSystem.GetComponent<StatsScript>().numOfPlants++;
+            plant.levelProperties.GetComponent<StatsScript>().seedPlanted++;
+            plant.levelProperties.GetComponent<StatsScript>().numOfPlants++;
+            
             draggableItem.cooldownTimer = 0;
             if (!LevelProperties.Instance.unlimitedMoney)
             {
                 LevelProperties.Instance.GetComponent<StatsScript>().DeductAmount(draggableItem.price);
             }
+            hasPlant = true;
             
         }
     }
@@ -112,7 +123,7 @@ public class PlotScript : MonoBehaviour, IDataPersistence
         
         
         shovelAudio.GetComponent<AudioSource>().Play();
-        plant.eventSystem.GetComponent<StatsScript>().numOfPlants--;
+        plant.levelProperties.GetComponent<StatsScript>().numOfPlants--;
         Destroy(transform.GetChild(0).gameObject);
         hasPlant = false;
         gameObject.GetComponent<SpriteRenderer>().sprite = DryLand;
@@ -123,12 +134,14 @@ public class PlotScript : MonoBehaviour, IDataPersistence
     {
         if (!transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized)
         {
-            transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
-            transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyFP = false;
+            
             fertilizerAudio.GetComponent<AudioSource>().Play();
             Destroy(transform.GetChild(0).Find("FertilizeIndicator(Clone)").gameObject);
+
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().isFertilized = true;
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyFP = false;
             //Instantiate(fertilizer,transform);
-            
+
         }
     }
 
@@ -192,5 +205,12 @@ public class PlotScript : MonoBehaviour, IDataPersistence
         }
 
         
+    }
+
+    public void OnDrop(PointerEventData eventData)
+    {
+        if (eventData.pointerDrag.GetComponent<SeedScript>() != null && LevelProperties.Instance.GetComponent<StatsScript>().moneyAvailable >= eventData.pointerDrag.GetComponent<SeedScript>().price) { 
+            SeedDrop(eventData.pointerDrag.GetComponent<SeedScript>());
+        }
     }
 }

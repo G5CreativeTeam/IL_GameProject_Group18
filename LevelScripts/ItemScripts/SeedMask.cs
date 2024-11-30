@@ -13,7 +13,7 @@ public class SeedMask : MonoBehaviour
     void Start()
     {
         percentage = Seed.GetComponent<SeedScript>().cooldownTimer / Seed.GetComponent<SeedScript>().cooldownTime;
-        Debug.Log(Seed.GetComponent<SeedScript>().cooldownTimer + " / " + Seed.GetComponent<SeedScript>().cooldownTime);
+        
         gameObject.GetComponent<RectTransform>().offsetMax = new Vector2(0,-percentage);
     }
 
@@ -21,7 +21,7 @@ public class SeedMask : MonoBehaviour
     void Update()
     {
         percentage = Seed.GetComponent<SeedScript>().cooldownTimer / Seed.GetComponent<SeedScript>().cooldownTime;
-        Debug.Log(percentage);
+        
         gameObject.GetComponent<RectTransform>().offsetMax = new Vector2(0, -percentage*emptyCoordinates);
     }
 }

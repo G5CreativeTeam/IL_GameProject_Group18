@@ -6,6 +6,10 @@ using UnityEngine;
 public class PestSpawnerScript : MonoBehaviour
 {
     // Start is called before the first frame update
+    [Header("Spawning Properties")]
+    public float pestSpawnRate = 5;
+    public int pestSwarm = 1;
+
     private float pestTimer = 0;
     private float realTime = 0;
     private int pestMax;
@@ -23,19 +27,22 @@ public class PestSpawnerScript : MonoBehaviour
     {
         
         pestMax = eventSystem.GetComponent<LevelProperties>().pestMax;
-        pestRate = eventSystem.GetComponent<LevelProperties>().pestSpawnRate;
-        
+        //
     }
 
     // Update is called once per frame
     void Update()
     {
-        pestTimer += Time.deltaTime;
+        if (LevelProperties.Instance.GetComponent<StatsScript>().numOfPlants > 0)
+        {
+            pestTimer += Time.deltaTime;
+        }
+        
         realTime += Time.deltaTime;
         
-        if (pestTimer >= pestRate && eventSystem.GetComponent<StatsScript>().numOfPests < pestMax && eventSystem.GetComponent<StatsScript>().numOfPlants > 0)
+        if (pestTimer >= pestSpawnRate && eventSystem.GetComponent<StatsScript>().numOfPests < pestMax && eventSystem.GetComponent<StatsScript>().numOfPlants > 0)
         {
-            for (int i = 0; i < eventSystem.GetComponent<LevelProperties>().pestEachSwarm; i++) {
+            for (int i = 0; i < pestSwarm; i++) {
                 randomPoint = Random.Range(0, spawnPoints.Length);
                 SpawnPest(spawnPoints[randomPoint].transform);
             }

@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 [System.Serializable]
 public class PlantScript : MonoBehaviour, IPointerClickHandler
 {
-
     [HideInInspector] public bool originalPlant = true;
     [HideInInspector] public bool isWatered;
     [HideInInspector] public bool isFertilized;
@@ -23,23 +23,33 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public int health = 30;
     public int sellPrice = 200;
     public int scoreValue = 20;
+    [SerializeField] private PlantType plant;
     public Sprite[] plantSprites;
+    public PlantPhases[] phases ;
 
     [Header("Central Logic")]
-    public GameObject eventSystem;
+    public GameObject levelProperties;
 
     [Header("Indicators")]
     public GameObject waterIndicator;
     public GameObject fertilizeIndicator;
+    public GameObject harvestIndicator;
+    public GameObject attackedIndicator;
 
     [Header("Audio")]
     public GameObject growAudio;
     public GameObject sellAudio;
     public GameObject witherAudio;
 
-    private string[] growthPhases = new string[] { "sprout", "growing", "ripe", "withered", "broken-growing", "broken-ripe" };
+    [Header("Animation")]
+    public float animSpeed = 0.03f;
+    public float interlude = 0.005f;
+    private int index = 0;
+
+    //private string[] growthPhases = new string[] { "sprout", "growing", "ripe", "withered"};
     private float[] growthTimerSet  ;
     private int currentGrowthPhase = 0;
+    private bool isAttacked = false;
     
     // Start is called before the first frame update
     void Start()
@@ -71,7 +81,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             {
                 FertilizerPhase();
             }
-
+            StartCoroutine(Animate());
         }
     }
 
@@ -90,7 +100,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
                 gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
             }
             //Debug.Log(!isWatered && !currentlyWP);
-            if (!isWatered && !currentlyWP && !HarvestPhase())
+            if (!isWatered && !currentlyWP && currentGrowthPhase != 2)
             {
                 WaterPhase();
             }
@@ -111,15 +121,22 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         if (health <= 0)
         {
             gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
+            gameObject.GetComponentInParent<SpriteRenderer>().sprite = gameObject.GetComponentInParent<PlotScript>().DryLand;
             Destroy(gameObject);
+            LevelProperties.Instance.GetComponent<StatsScript>().numOfPlants--;
         }
     }
 
     public void GrowNext()
     {
-
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
         if (NotLastPhase()) //Pengondisian untuk mengecek tanaman belum sampai matang/tahap terakhir
         {
+            StopCoroutine(Animate());
+
             SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
             spriteRender.sprite = plantSprites[currentGrowthPhase + 1];
             currentGrowthPhase++;
@@ -128,19 +145,23 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             if (NotLastPhase()) {
                 growthTimer = growthTimerSet[currentGrowthPhase];
             }
-            
 
-            if (!HarvestPhase())
+            isWatered = false;
+            if (currentGrowthPhase == 2)
             {
-                isWatered = false;
+                HarvestPhase();
             }
+            StartCoroutine(Animate());
+        } else
+        {
+            
         }
 
     }
 
     public void WaterPhase()
     {
-        SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
+        //SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
         //spriteInfo.color = new Color(0.4F,0.4F,0.4F,1);
         GameObject indicator = Instantiate(waterIndicator, transform);
         indicator.transform.SetParent(gameObject.transform);
@@ -150,7 +171,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
 
     public void FertilizerPhase()
     {
-        SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
+        //SpriteRenderer spriteInfo = GetComponent<SpriteRenderer>();
 
         
         GameObject indicator = Instantiate(fertilizeIndicator, transform);
@@ -162,13 +183,16 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
 
-        if (HarvestPhase()) {
+        if (currentGrowthPhase == 2) {
             
-            eventSystem.GetComponent<StatsScript>().moneyAvailable = eventSystem.GetComponent<StatsScript>().AddAmount(sellPrice, eventSystem.GetComponent<StatsScript>().moneyAvailable);
-            eventSystem.GetComponent<StatsScript>().score = eventSystem.GetComponent<StatsScript>().AddAmount(scoreValue * 2, eventSystem.GetComponent<StatsScript>().score);
-            eventSystem.GetComponent<StatsScript>().plantsHarvested = eventSystem.GetComponent<StatsScript>().AddAmount(1, eventSystem.GetComponent<StatsScript>().plantsHarvested);
+            levelProperties.GetComponent<StatsScript>().moneyAvailable = levelProperties.GetComponent<StatsScript>().AddAmount(sellPrice, levelProperties.GetComponent<StatsScript>().moneyAvailable);
+            levelProperties.GetComponent<StatsScript>().score = levelProperties.GetComponent<StatsScript>().AddAmount(scoreValue * 2, levelProperties.GetComponent<StatsScript>().score);
+            levelProperties.GetComponent<StatsScript>().plantsHarvested = levelProperties.GetComponent<StatsScript>().AddAmount(1, levelProperties.GetComponent<StatsScript>().plantsHarvested);
             sellAudio.GetComponent<AudioSource>().Play();
+            PlantAdd(plant);
+            isWatered = false;
             Destroy(gameObject);
+            
 
         }
     }
@@ -177,10 +201,25 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     {
         gameObject.GetComponent<SpriteRenderer>().color = new Color(0.3F, 0.3F, 0.3f, 0.8f);
     }
-    public void TakeDamage(int amount)
+
+    public IEnumerator TakeDamage(int amount)
     {
         health -= amount;
-        Debug.Log($"OUCH!{health}");
+        
+        if (!isAttacked)
+        {
+            isAttacked = true;
+            GameObject indicator = Instantiate(attackedIndicator, transform);
+            indicator.transform.SetParent(gameObject.transform);
+            yield return new WaitForSeconds(1.5f);
+            Destroy(indicator);
+            isAttacked = false;
+        } else
+        {
+            yield return new WaitForSeconds(1.5f);
+        }
+        
+        StopCoroutine(TakeDamage(amount));
     }
 
     public bool NotLastPhase()
@@ -188,8 +227,57 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         return currentGrowthPhase < plantSprites.Length - 1;
     }
 
-    public bool HarvestPhase() 
+    public void HarvestPhase() 
     {
-        return currentGrowthPhase == 2;
+        
+        isWatered = true;
+        GameObject indicator = Instantiate(harvestIndicator, transform);
+        indicator.transform.SetParent(gameObject.transform);
+        
     }
+
+    public void PlantAdd(PlantType plant)
+    {
+        switch (plant)
+        {
+            case PlantType.carrot:
+                LevelProperties.Instance.GetComponent<StatsScript>().carrotsHarvested++;
+                return ;
+            case PlantType.potato:
+                LevelProperties.Instance.GetComponent<StatsScript>().potatoHarvested++;
+                return;
+            case PlantType.yam:
+                LevelProperties.Instance.GetComponent<StatsScript>().yamHarvested++;
+                return;
+        }
+    }
+
+    public IEnumerator Animate()
+    {
+        while (true)
+        {
+            while (index < phases[currentGrowthPhase].plantSprites.Length)
+            {
+                gameObject.GetComponent<SpriteRenderer>().sprite = phases[currentGrowthPhase].plantSprites[index];
+
+                yield return new WaitForSeconds(animSpeed);
+                index++;
+            }
+            index = 0;
+        }
+
+    }
+}
+
+public enum PlantType
+{
+    carrot,
+    potato,
+    yam
+}
+
+[System.Serializable]
+public class PlantPhases
+{
+    public Sprite[] plantSprites;
 }

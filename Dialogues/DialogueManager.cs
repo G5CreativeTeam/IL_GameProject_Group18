@@ -76,7 +76,7 @@ public class DialogueManager : MonoBehaviour
     // Finished the Story (Dialogue)
     private void FinishDialogue()
     {
-        Debug.Log("End of Dialogue!");
+        
         nextStep.SetActive(true);
     }
 
@@ -96,11 +96,11 @@ public class DialogueManager : MonoBehaviour
         if (story.currentTags.Count != 0)
         {
             nametag.text = story.currentTags[0];
-            Debug.Log(story.currentTags[1]);
+
             Character = GameObject.Find(story.currentTags[1]);
-            Debug.Log(Character == null);
+            
             Character.GetComponent<Image>().enabled = true;
-            Debug.Log(story.currentTags[0]);
+            
         }
         
         StopAllCoroutines();

@@ -1,7 +1,9 @@
+using Ink.Parsed;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,14 +11,16 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
 {
     [Header("General Properties")]
     public int levelTime = 60;
-    public int target = 1500;
+    
     public bool noTimerMode = false;
     public bool unlimitedMoney = false;
-    public bool haveDoneDialogue = false;
+    public bool activateDialogue = false;
+    public GameObjective[] Targets;
 
-    [Header("Pest Properties")]
-    public float pestSpawnRate = 1;
-    public int pestEachSwarm = 5;
+
+    [Header("General Pest Properties")]
+    //public float pestSpawnRate = 1;
+    //public int pestEachSwarm = 5;
     public int pestMax = 15;
     public int pestSpeedMultiplier = 1;
     public int pestDamageMultiplier = 1;
@@ -30,9 +34,14 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     public GameObject countdownScreen;
     public GameObject GameUI;
     public GameObject dialogueUI;
+    public GameObject MenuUI;
+    public GameObject MoneyCounter;
+
+    [Header("Shortcut Keys")]
+    public KeyCode pause;
 
     [HideInInspector] public float elapsedTime = 0.0f;
-    [HideInInspector] public bool isCarryingObject;
+    [HideInInspector] public bool isCarryingObject = false;
     [HideInInspector] public GameObject objectCarried;
 
 
@@ -40,6 +49,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     private bool gameOngoing = false;
 
     public static LevelProperties Instance { get; private set; }
+    
     private void Awake()
     {
         if (Instance != null)
@@ -52,7 +62,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     // Start is called before the first frame update
     private void Start()
     {
-        if (dialogueUI.activeInHierarchy == false && !haveDoneDialogue)
+        if (dialogueUI.activeInHierarchy == false && !activateDialogue)
         {
             dialogueUI.SetActive(true);
         } else
@@ -61,6 +71,8 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
             InitiateGame();
         }
 
+        
+
         if (noTimerMode)
         {
             GameUI.transform.Find("Timer").gameObject.SetActive(false);
@@ -68,18 +80,43 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
             GameUI.transform.Find("Objectives").gameObject.SetActive(false);
 
         }
-        
-        
+        foreach (GameObjective target in Targets)
+        {
+            target.Initialize(gameObject.GetComponent<StatsScript>());
+            
+        }
+        MoneyCounter.GetComponent<TextMeshProUGUI>().text = gameObject.GetComponent<StatsScript>().moneyAvailable.ToString();
     }
 
     // Update is called once per frame
     void Update()
     {
+        MoneyCounter.GetComponent<TextMeshProUGUI>().text = gameObject.GetComponent<StatsScript>().moneyAvailable.ToString();
         if (gameOngoing)
         {
             elapsedTime += Time.deltaTime;
             
         }
+        foreach (GameObjective target in Targets)
+        {
+            target.UpdateCompletion();
+            
+        }
+
+        if (Input.GetKeyDown(pause) && gameOngoing)
+        {
+            if (!MenuUI.activeInHierarchy)
+            {
+                MenuUI.SetActive(true);
+                StopGame();
+            }
+            else
+            {
+                MenuUI.SetActive(false);
+                StartGame();
+            }
+        }
+
         if (!noTimerMode)
         {
             if (RoundFinished() && gameOngoing)
@@ -87,6 +124,8 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
                 StartCoroutine(EndResults());
             }
         }
+        
+
     }
 
     public void InitiateGame()
@@ -97,7 +136,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
 
     IEnumerator EndResults()
     {
-        
+        gameOngoing = false;
         FinishedScreen.SetActive(true);
         yield return new WaitForSeconds(2);
         FinishedScreen.SetActive(false);
@@ -130,13 +169,21 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     }
     public bool RoundFinished()
     {
-        return (int)elapsedTime == levelTime+1 ;
+        //bool completeStatus = false;
+        //foreach (GameObjective target in Targets)
+        //{
+        //    target.UpdateCompletion();
+        //    completeStatus = target.completed;
+        //}
+        //return completeStatus;
+
+        return elapsedTime >= levelTime + 1;
     }
 
     public void StopGame()
     {
         StopTime();
-        gameOngoing = false;
+        
     }
 
     public void StartGame()
@@ -155,9 +202,9 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         Time.timeScale = 0;
     }
 
-    public void QuitToMainMenu()
+    public void LoadScene(int level)
     {
-        SceneManager.LoadSceneAsync(0);
+        SceneManager.LoadSceneAsync(level);
     }
 
     public void EndGame()
@@ -179,12 +226,74 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     public void LoadData(GameData gameData)
     {
         this.elapsedTime = gameData.elapsedTime;
-        this.haveDoneDialogue = gameData.haveDoneDialogue;
+        this.activateDialogue = gameData.haveDoneDialogue;
     }
 
     public void SaveData(ref GameData gameData)
     {
         gameData.elapsedTime = this.elapsedTime;
-        gameData.haveDoneDialogue = this.haveDoneDialogue;
+        gameData.haveDoneDialogue = this.activateDialogue;
+    }
+}
+[System.Serializable]
+public enum StatVariable
+{
+    score,
+    seedPlanted,
+    plantsHarvested ,
+    carrotsHarvested ,
+    potatoHarvested ,
+    yamHarvested ,
+    moneyAvailable,
+}
+
+[System.Serializable]
+public class GameObjective
+{
+    public string label;
+    public StatVariable targetVariable; // Enum for selecting variables
+    public int targetValue;
+    [HideInInspector] public bool completed = false;
+
+    private StatsScript statScript;
+
+    public void Initialize(StatsScript statScript)
+    {
+        this.statScript = statScript;
+    }
+
+    public int CurrentValue
+    {
+        get
+        {
+            if (statScript == null) return 0;
+
+            // Access the selected variable from StatScripts
+            switch (targetVariable)
+            {
+                case StatVariable.score:
+                    return statScript.score;
+                case StatVariable.seedPlanted:
+                    return statScript.seedPlanted;
+                case StatVariable.plantsHarvested:
+                    return statScript.plantsHarvested;
+                case StatVariable.carrotsHarvested:
+                    return statScript.carrotsHarvested;
+                case StatVariable.moneyAvailable:
+                    return statScript.moneyAvailable;
+                case StatVariable.yamHarvested:
+                    return statScript.yamHarvested;
+                case StatVariable.potatoHarvested:
+                    return statScript.potatoHarvested;
+                default:
+                    return 0;
+            }
+        }
+    }
+
+    public void UpdateCompletion()
+    {
+        //if (completed) { return; }
+        completed = CurrentValue >= targetValue;
     }
 }

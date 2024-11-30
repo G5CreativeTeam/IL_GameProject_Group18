@@ -7,10 +7,21 @@ public class CharacterResultScript : MonoBehaviour
     public GameObject WinCharacter;
     public GameObject LoseCharacter;
     public GameObject eventSystem;
+
+    private bool status;
     // Start is called before the first frame update
     void OnEnable()
     {
-        if (eventSystem.GetComponent<LevelProperties>().target <= eventSystem.GetComponent<StatsScript>().moneyAvailable) {
+        foreach (GameObjective target in LevelProperties.Instance.Targets)
+        {
+            status = target.completed;
+            if (!status)
+            {
+                break;
+            }
+        }
+        if (status)
+        {
             WinCharacter.SetActive(true);
         } else
         {
