@@ -10,12 +10,13 @@ using UnityEngine.SceneManagement;
 public class LevelProperties : MonoBehaviour, IDataPersistence
 {
     [Header("General Properties")]
+    public string levelText = "Level";
     public int levelTime = 60;
-    
     public bool noTimerMode = false;
     public bool unlimitedMoney = false;
-    public bool activateDialogue = false;
+    public bool deactivateDialogue = false;
     public GameObjective[] Targets;
+    public int nextLevelIndex;
 
 
     [Header("General Pest Properties")]
@@ -25,7 +26,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     public int pestSpeedMultiplier = 1;
     public int pestDamageMultiplier = 1;
     public float pestMultiply = 2;
-    public int multiplyAt = 120;
+    public float multiplyAt = 120;
 
 
     [Header("Related Screens & Objects")]
@@ -36,6 +37,8 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     public GameObject dialogueUI;
     public GameObject MenuUI;
     public GameObject MoneyCounter;
+    public GameObject FloatingText;
+    public GameObject LevelLabelObject;
 
     [Header("Shortcut Keys")]
     public KeyCode pause;
@@ -62,7 +65,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     // Start is called before the first frame update
     private void Start()
     {
-        if (dialogueUI.activeInHierarchy == false && !activateDialogue)
+        if (dialogueUI.activeInHierarchy == false && !deactivateDialogue)
         {
             dialogueUI.SetActive(true);
         } else
@@ -70,7 +73,8 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
             GameUI.SetActive(true);
             InitiateGame();
         }
-
+        LevelLabelObject.GetComponent<TextMeshProUGUI>().text = levelText;
+        Debug.Log(LevelLabelObject.GetComponent<TextMeshProUGUI>().text);
         
 
         if (noTimerMode)
@@ -83,7 +87,6 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         foreach (GameObjective target in Targets)
         {
             target.Initialize(gameObject.GetComponent<StatsScript>());
-            
         }
         MoneyCounter.GetComponent<TextMeshProUGUI>().text = gameObject.GetComponent<StatsScript>().moneyAvailable.ToString();
     }
@@ -223,16 +226,86 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 
+    public GameObject SpawnFloatingNumber(Transform transform,int number)
+    {
+        GameObject floatingNumber = Instantiate(FloatingText, new Vector3 (transform.position.x, transform.position.y,-5),Quaternion.identity,transform);
+        
+        //floatingNumber.GetComponent<RectTransform>().anchorMin = new Vector2(1,0);
+        //Debug.Log(transform.localPosition.x);
+        //Debug.Log(transform.localPosition.y);
+        TextMeshProUGUI textComponent = floatingNumber.GetComponent<TextMeshProUGUI>();
+        textComponent.text = number.ToString() ;
+        if (number < 0)
+        {
+            floatingNumber.GetComponent<TextMeshProUGUI>().color = Color.red;
+        }
+        else
+        {
+            floatingNumber.GetComponent<TextMeshProUGUI>().color = Color.yellow;
+            textComponent.text = "+"+number.ToString() ;
+
+        }
+        StartCoroutine(MoveFloatingText(floatingNumber));
+        return floatingNumber;
+    }
+
+    private IEnumerator MoveFloatingText(GameObject floatingTextInstance)
+    {
+        float moveDuration = 1.5f; // Duration for movement
+        float fadeDuration = 1f; // Duration for fade-out
+        Vector3 startPosition = floatingTextInstance.transform.position;
+        TextMeshProUGUI textComponent = floatingTextInstance.GetComponent<TextMeshProUGUI>();
+        Vector3 endPosition = startPosition + new Vector3(0, 0.5f, 0); // Move upwards by 2 units
+        Color originalColor = textComponent.color;
+
+        // Step 1: Move the text to the target position
+        float moveTimer = 0f;
+        while (moveTimer < moveDuration)
+        {
+            floatingTextInstance.transform.position = Vector3.Lerp(startPosition, endPosition, moveTimer / moveDuration);
+            moveTimer += Time.deltaTime;
+            yield return null; // Wait until the next frame
+        }
+
+        // Ensure it snaps to the exact position at the end
+        floatingTextInstance.transform.position = endPosition;
+
+        // Step 2: Fade out the text after reaching the top position
+        float fadeTimer = 0f;
+        while (fadeTimer < fadeDuration)
+        {
+            float fadeProgress = fadeTimer / fadeDuration;
+            textComponent.color = new Color(
+                originalColor.r,
+                originalColor.g,
+                originalColor.b,
+                Mathf.Lerp(1f, 0f, fadeProgress) // Reduce alpha to 0
+            );
+            fadeTimer += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure the text is fully invisible before destroying
+        textComponent.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0f);
+
+        Destroy(floatingTextInstance); // Destroy the floating text object
+    }
+
     public void LoadData(GameData gameData)
     {
         this.elapsedTime = gameData.elapsedTime;
-        this.activateDialogue = gameData.haveDoneDialogue;
+        this.deactivateDialogue = gameData.deactivateDialogue;
     }
 
     public void SaveData(ref GameData gameData)
     {
         gameData.elapsedTime = this.elapsedTime;
-        gameData.haveDoneDialogue = this.activateDialogue;
+        gameData.deactivateDialogue = this.deactivateDialogue;
+    }
+
+    public void NextLevel ()
+    {
+
     }
 }
 [System.Serializable]
@@ -296,4 +369,6 @@ public class GameObjective
         //if (completed) { return; }
         completed = CurrentValue >= targetValue;
     }
+
+    
 }

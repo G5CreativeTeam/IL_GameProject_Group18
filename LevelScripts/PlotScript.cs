@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -25,7 +26,13 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
     public GameObject waterAudio;
     public GameObject fertilizerAudio;
 
+    [Header("Save Properties")]
+    public GameObject carrotPlant;
+    public GameObject potatoPlant;
+    public GameObject yamPlant;
+
     [HideInInspector] public bool hasPlant;
+    [HideInInspector] public PlantType type = PlantType.none;
     [HideInInspector] public GameObject plantObject;
     [HideInInspector] public bool toolActive;
 
@@ -90,19 +97,28 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
         if (draggableItem.plant != null)
         {
             plantObject = Instantiate(draggableItem.plant, transform);
+
+
             plant = plantObject.GetComponent<PlantScript>();
             plant.originalPlant = false;
             plantAudio.GetComponent<AudioSource>().Play();
             plant.levelProperties.GetComponent<StatsScript>().seedPlanted++;
             plant.levelProperties.GetComponent<StatsScript>().numOfPlants++;
+
+            //if (!LevelProperties.Instance.unlimitedMoney)
+            //{
+            //    GameObject floatingnum = LevelProperties.Instance.SpawnFloatingNumber(transform.parent, -1*draggableItem.price);
+            //    floatingnum.transform.localScale = new Vector3(1f, 1f, 1f);
+            //}
             
+            type = plant.GetComponent<PlantScript>().plant;
             draggableItem.cooldownTimer = 0;
             if (!LevelProperties.Instance.unlimitedMoney)
             {
                 LevelProperties.Instance.GetComponent<StatsScript>().DeductAmount(draggableItem.price);
             }
             hasPlant = true;
-            
+           
         }
     }
     public void WateringCanDrop()
@@ -120,11 +136,15 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
 
     public void ShovelDrop()
     {
-        
-        
+
+        type = PlantType.none;
         shovelAudio.GetComponent<AudioSource>().Play();
         plant.levelProperties.GetComponent<StatsScript>().numOfPlants--;
-        Destroy(transform.GetChild(0).gameObject);
+        for (int i = 0;i<transform.childCount;i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
+        
         hasPlant = false;
         gameObject.GetComponent<SpriteRenderer>().sprite = DryLand;
 
@@ -148,19 +168,29 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
     public void LoadData(GameData gameData)
     {
         
-        plotData matchingPlot = gameData.plotList.Find(plot => plot.id == id);
-        //Debug.Log("Is it null or not?"+matchingPlot == null);
-        //Debug.Log("is the list empty?" + gameData.plotList.Count);
-        //Debug.Log(matchingPlot);
+        PlotData matchingPlot = gameData.plotList.Find(plot => plot.id == id);
+
         if (matchingPlot != null)
         {
             hasPlant = matchingPlot.hasPlant;
-            plantObject = matchingPlot.plantObject;
-            if (plantObject != null)
+            type = matchingPlot.PlantType;
+            if (hasPlant && type != PlantType.none)
             {
-                Instantiate(plantObject, transform);
+                switch (type)
+                {
+                    case PlantType.carrot:
+                        plantObject = Instantiate(carrotPlant);
+                        return;
+                    case PlantType.potato:
+                        plantObject = Instantiate(potatoPlant);
+                        return;
+                    case PlantType.yam:
+                        plantObject = Instantiate(yamPlant);
+                        return;
+
+                }
             }
-            plant = matchingPlot.plant;
+            plant = plantObject.GetComponent<PlantScript>();
             
         } else
         {
@@ -174,14 +204,15 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
 
     public void SaveData(ref GameData gameData)
     {
-        plotData plotSave = new plotData();
+        PlotData plotSave = new();
         
         plotSave.id = id;
         plotSave.hasPlant = hasPlant;
         plotSave.plant = plant;
         plotSave.plantObject = plantObject;
+        plotSave.PlantType = type;
 
-        plotData matchingPlot = gameData.plotList.Find(plot => plot.id == id);
+        PlotData matchingPlot = gameData.plotList.Find(plot => plot.id == id);
 
         if (matchingPlot != null)
         {
@@ -192,11 +223,11 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
         }
         else
         {
-            List<plotData> list = new List<plotData>();
-            list.Add(plotSave);
+            //List<plotData> list = new();
+            //list.Add(plotSave);
             
             gameData.plotList.Add(plotSave);
-            foreach (plotData plotData in gameData.plotList)
+            foreach (PlotData plotData in gameData.plotList)
             {
                 Debug.Log(plotData.hasPlant);
             }
@@ -209,7 +240,8 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
 
     public void OnDrop(PointerEventData eventData)
     {
-        if (eventData.pointerDrag.GetComponent<SeedScript>() != null && LevelProperties.Instance.GetComponent<StatsScript>().moneyAvailable >= eventData.pointerDrag.GetComponent<SeedScript>().price) { 
+        if (eventData.pointerDrag.GetComponent<SeedScript>() != null 
+            && LevelProperties.Instance.GetComponent<StatsScript>().moneyAvailable >= eventData.pointerDrag.GetComponent<SeedScript>().price) { 
             SeedDrop(eventData.pointerDrag.GetComponent<SeedScript>());
         }
     }

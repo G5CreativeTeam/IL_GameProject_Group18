@@ -129,7 +129,7 @@ public class FertilizerScript : MonoBehaviour, IPointerClickHandler
         }
 
         // Reset the fertilizer to its original position if not dropped on a valid plot
-        //ReturnToPosition();
+        ReturnToPosition();
 
 
     }

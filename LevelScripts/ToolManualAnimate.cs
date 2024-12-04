@@ -10,7 +10,7 @@ public class ToolManualAnimate : MonoBehaviour
     public float size = 6.5f;
     public float xPosition = 10;
     public float yPosition = 20;
-    [SerializeField] private tool activeTool;
+    [SerializeField] private ToolType activeTool;
     [SerializeField] private GameObject toolObject;
 
     [Header("Animation")]
@@ -45,7 +45,7 @@ public class ToolManualAnimate : MonoBehaviour
             
             yield return new WaitForSeconds(interlude);
         }
-        useTool(activeTool);
+        UseTool(activeTool);
         transform.parent.GetComponent<PlotScript>().toolActive = false;
         Destroy(gameObject);
         
@@ -54,26 +54,26 @@ public class ToolManualAnimate : MonoBehaviour
         
     }
 
-    public void useTool(tool tool)
+    public void UseTool(ToolType tool)
     {
         switch (tool)
         {
-            case tool.shovel:
+            case ToolType.shovel:
                 transform.parent.GetComponent<PlotScript>().ShovelDrop();
-                toolObject.GetComponent<ShovelScript>().ReturnToPosition();
+                //toolObject.GetComponent<ShovelScript>().ReturnToPosition();
                 return;
-            case tool.wateringCan:
+            case ToolType.wateringCan:
                 transform.parent.GetComponent<PlotScript>().WateringCanDrop();
-                toolObject.GetComponent<WateringCanScript>().ReturnToPosition();
+                //toolObject.GetComponent<WateringCanScript>().ReturnToPosition();
                 return;
-            case tool.fertilizer:
+            case ToolType.fertilizer:
                 transform.parent.GetComponent<PlotScript>().FertilizerDrop();
-                toolObject.GetComponent<FertilizerScript>().ReturnToPosition();
+                //toolObject.GetComponent<FertilizerScript>().ReturnToPosition();
                 return;
         }
     }
 
-    public enum tool
+    public enum ToolType
     {
         fertilizer,
         wateringCan,

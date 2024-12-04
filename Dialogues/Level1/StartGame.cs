@@ -15,7 +15,7 @@ public class StartGame : MonoBehaviour
             if (obj.GetComponent<LevelProperties>() != null)
             {
                 obj.GetComponent<LevelProperties>().InitiateGame();
-                obj.GetComponent<LevelProperties>().activateDialogue = true;
+                obj.GetComponent<LevelProperties>().deactivateDialogue = true;
             }
         }
         foreach (GameObject obj in unEssentialObjects)

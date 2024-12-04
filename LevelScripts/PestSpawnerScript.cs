@@ -12,23 +12,17 @@ public class PestSpawnerScript : MonoBehaviour
 
     private float pestTimer = 0;
     private float realTime = 0;
-    private int pestMax;
     private float pestRate;
-    private int realTimeTimer;
+
     
 
-    public GameObject eventSystem;
+    //public GameObject eventSystem;
     public GameObject[] pests;
     public GameObject[] spawnPoints;
+    public GameObject PlayArea;
 
     private int randomPoint ;
 
-    void Start()
-    {
-        
-        pestMax = eventSystem.GetComponent<LevelProperties>().pestMax;
-        //
-    }
 
     // Update is called once per frame
     void Update()
@@ -40,18 +34,24 @@ public class PestSpawnerScript : MonoBehaviour
         
         realTime += Time.deltaTime;
         
-        if (pestTimer >= pestSpawnRate && eventSystem.GetComponent<StatsScript>().numOfPests < pestMax && eventSystem.GetComponent<StatsScript>().numOfPlants > 0)
+        if (pestTimer >= pestSpawnRate && 
+            LevelProperties.Instance.GetComponent<StatsScript>().numOfPests < LevelProperties.Instance.pestMax && 
+            LevelProperties.Instance.GetComponent<StatsScript>().numOfPlants > 0)
         {
             for (int i = 0; i < pestSwarm; i++) {
                 randomPoint = Random.Range(0, spawnPoints.Length);
                 SpawnPest(spawnPoints[randomPoint].transform);
+                if (LevelProperties.Instance.GetComponent<StatsScript>().numOfPests >= LevelProperties.Instance.pestMax)
+                {
+                    break;
+                }
             }
             
             pestTimer = 0;
         }
-        if (realTime > eventSystem.GetComponent<LevelProperties>().multiplyAt)
+        if (realTime > LevelProperties.Instance.multiplyAt)
         {
-            pestRate = pestRate / eventSystem.GetComponent<LevelProperties>().pestMultiply;
+            pestRate = pestRate / LevelProperties.Instance.pestMultiply;
             realTime = 0;
         }
     }
@@ -60,7 +60,8 @@ public class PestSpawnerScript : MonoBehaviour
     {
         int randomNum = Random.Range(0, pests.Length);
         GameObject pest = Instantiate(pests[randomNum],point.position,new Quaternion(0,0,0,0),point.parent);
+        pest.transform.parent = PlayArea.transform;
         pest.GetComponent<PestScript>().originalPest = false;
-        eventSystem.GetComponent<StatsScript>().numOfPests++;
+        LevelProperties.Instance.GetComponent<StatsScript>().numOfPests++;
     }
 }

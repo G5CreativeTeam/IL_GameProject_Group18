@@ -79,7 +79,7 @@ public class WateringCanScript : MonoBehaviour, IPointerClickHandler
             
             LevelProperties.Instance.isCarryingObject = true;
             LevelProperties.Instance.objectCarried = gameObject;
-            canvasGroup.alpha = 0.5f;
+            canvasGroup.alpha = 0.8f;
             canvasGroup.blocksRaycasts = true; // Allow interaction during dragging
         }
         else
@@ -127,7 +127,7 @@ public class WateringCanScript : MonoBehaviour, IPointerClickHandler
         }
         
         // Reset the fertilizer to its original position if not dropped on a valid plot
-        //ReturnToPosition();
+        ReturnToPosition();
     }
 
     public void ReturnToPosition()

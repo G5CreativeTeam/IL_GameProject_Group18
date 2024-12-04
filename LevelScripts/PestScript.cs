@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,6 +14,10 @@ public class PestScript : MonoBehaviour
     public float swipeSpeed = 5f;
     public float minSwipeDistance = 0.5f; // Minimum distance to qualify as a swipe
 
+    [Header("Animation")]
+    public float animSpeed;
+    public Sprite[] animationFrames;
+
     [Header("Audio")]
     public GameObject attackAudio;
 
@@ -23,7 +28,8 @@ public class PestScript : MonoBehaviour
     [HideInInspector] public bool isCurrentlyColliding;
 
     private float attackTimer;
-    private Collision2D collidedObject;
+    private GameObject currentPlant; // Tracks the plant being attacked
+    private List<GameObject> otherColliders = new List<GameObject>(); // Tracks other colliding objects
     private Rigidbody2D rb;
 
     private Vector2 swipeStart;
@@ -34,7 +40,8 @@ public class PestScript : MonoBehaviour
     private bool isStopped = false; // Tracks if the pest is stopped
     private bool isSpinning = false; // Tracks if the pest is spinning
     private float spinDirection = 1f; // 1 for clockwise, -1 for counterclockwise
-    private float temp ;
+    private float temp;
+    private int index;
 
     public void Start()
     {
@@ -42,21 +49,22 @@ public class PestScript : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         attackTimer = 0;
         FindNearestPlant();
+        if (!originalPest)
+        {
+            StartCoroutine(Animate());
+        }
     }
 
     public void Update()
     {
-
         if (isSpinning)
         {
-            // Rotate the pest indefinitely based on spinDirection
             transform.Rotate(Vector3.forward * 360 * spinDirection * Time.deltaTime);
         }
-        
+
         if (PestOutOfScreen() && !newSpawn)
         {
             PestDeath();
-            
         }
 
         if (isStopped)
@@ -70,43 +78,45 @@ public class PestScript : MonoBehaviour
         if (newSpawn && !PestOutOfScreen())
         {
             newSpawn = false;
-            
         }
 
         if (target != null && !originalPest && !hasSwiped)
         {
             TowardsPlant(target);
         }
-        
-        if (isCurrentlyColliding && collidedObject != null )
-        {   
-            if (collidedObject.gameObject.TryGetComponent<PlantScript>(out PlantScript plant))
+
+        if (currentPlant != null)
+        {
+            PlantScript plant = currentPlant.GetComponent<PlantScript>();
+            if (plant.isAlive && plant.currentGrowthPhase != 0)
             {
                 attackTimer += Time.deltaTime;
-                
-                //isStopped = true; // Stop the pest when found plant
-                //temp = speed;
-                //StopMoving();
+                StopMoving();
+
                 if (attackTimer >= attackRate)
                 {
+                    Debug.Log("Attacking");
                     attackAudio.GetComponent<AudioSource>().Play();
                     StartCoroutine(plant.TakeDamage(damage));
                     attackTimer = 0;
                 }
+                else
+                {
+                    Debug.Log("Awaiting: " + (attackRate - attackTimer));
+                }
             }
-            
-        } else
+            else
+            {
+                ResumeMoving();
+            }
+        }
+        else
         {
-
-            //speed = temp;
-            //Debug.Log("Moving");
+            ResumeMoving();
         }
 
-        
-        
         if (!newSpawn)
         {
-            
             HandleSwipe();
         }
 
@@ -116,58 +126,52 @@ public class PestScript : MonoBehaviour
     private void StopMoving()
     {
         speed = 0;
-        isStopped = true;
+    }
+
+    private void ResumeMoving()
+    {
+        speed = temp;
     }
 
     private void HandleSwipe()
     {
-       
         if (Input.GetMouseButtonDown(0) && !isSpinning)
         {
             swipeStart = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            
-            // Check if the click is on the pest
             Vector2 clickPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
             if (GetComponent<Collider2D>().bounds.Contains(clickPosition))
             {
-                isStopped = true; // Stop the pest when clicked
-                rb.velocity = Vector2.zero; // Stop its movement
-                isSwiping = true; // Allow for a potential swipe
+                isStopped = true;
+                rb.velocity = Vector2.zero;
+                StopCoroutine(Animate());
+                isSwiping = true;
             }
         }
+
         if (Input.GetMouseButtonUp(0) && isSwiping)
         {
-
             swipeEnd = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             float swipeDistance = Vector2.Distance(swipeStart, swipeEnd);
 
             if (swipeDistance >= minSwipeDistance)
             {
-                // This is a valid swipe
                 Vector2 swipeDirection = (swipeEnd - swipeStart).normalized;
-
-                // Set spin direction based on swipe
                 spinDirection = swipeDirection.x > 0 ? -1f : 1f;
 
-                // Apply swipe velocity
                 rb.velocity = swipeDirection * swipeSpeed;
-
-                // diable box collider to ignore collisions
+                GetComponent<CircleCollider2D>().enabled = false;
                 GetComponent<BoxCollider2D>().enabled = false;
-
-                hasSwiped = true; // Pest no longer targets plants after being swiped
-
-                // Start spinning after swipe
+                hasSwiped = true;
                 isSpinning = true;
             }
             else
             {
-                // Not a swipe, resume movement
                 isStopped = false;
+                StartCoroutine(Animate());
             }
 
-            isSwiping = false; // Reset swiping state
+            isSwiping = false;
         }
     }
 
@@ -175,18 +179,28 @@ public class PestScript : MonoBehaviour
     {
         if (!hasSwiped)
         {
-            collidedObject = col;
-            isCurrentlyColliding = true;
+            if (col.gameObject.TryGetComponent<PlantScript>(out PlantScript plant))
+            {
+                currentPlant = col.gameObject;
+            }
+            else
+            {
+                otherColliders.Add(col.gameObject);
+            }
         }
     }
 
     public void OnCollisionExit2D(Collision2D col)
     {
-       
-        isCurrentlyColliding = false;
-        collidedObject = null;
-        attackTimer = 0;
-        
+        if (col.gameObject == currentPlant)
+        {
+            currentPlant = null;
+            attackTimer = 0;
+        }
+        else if (otherColliders.Contains(col.gameObject))
+        {
+            otherColliders.Remove(col.gameObject);
+        }
     }
 
     public void OnMouseOver()
@@ -204,9 +218,9 @@ public class PestScript : MonoBehaviour
         if (target != null)
         {
             transform.position = Vector2.MoveTowards(
-                this.transform.position,
+                transform.position,
                 target.transform.position,
-                (eventsystem.GetComponent<LevelProperties>().pestSpeedMultiplier * speed) * Time.deltaTime
+                eventsystem.GetComponent<LevelProperties>().pestSpeedMultiplier * speed * Time.deltaTime
             );
         }
     }
@@ -221,8 +235,7 @@ public class PestScript : MonoBehaviour
         foreach (PlantScript plant in plants)
         {
             Vector3 viewportPos = mainCamera.WorldToViewportPoint(plant.transform.position);
-
-            if ((viewportPos.x >= 0 && viewportPos.x <= 1) && (viewportPos.y >= 0 && viewportPos.y <= 1))
+            if (plant.isAlive && viewportPos.x >= 0 && viewportPos.x <= 1 && viewportPos.y >= 0 && viewportPos.y <= 1)
             {
                 float distance = Vector2.Distance(transform.position, plant.transform.position);
                 if (distance < nearestDistance)
@@ -232,6 +245,7 @@ public class PestScript : MonoBehaviour
                 }
             }
         }
+
         return targetPlant;
     }
 
@@ -254,17 +268,29 @@ public class PestScript : MonoBehaviour
 
     private void FlipSprite()
     {
-        if (target == null || hasSwiped) return; // Skip flipping if already swiped
+        if (target == null || hasSwiped) return;
 
         if (target.transform.position.x < transform.position.x)
         {
-            // Target is to the right
             transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
         }
         else if (target.transform.position.x > transform.position.x)
         {
-            // Target is to the left
             transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+        }
+    }
+
+    public IEnumerator Animate()
+    {
+        while (true)
+        {
+            while (index < animationFrames.Length)
+            {
+                GetComponent<SpriteRenderer>().sprite = animationFrames[index];
+                yield return new WaitForSeconds(animSpeed);
+                index++;
+            }
+            index = 0;
         }
     }
 }

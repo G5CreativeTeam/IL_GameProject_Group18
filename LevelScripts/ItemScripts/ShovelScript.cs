@@ -78,7 +78,7 @@ public class ShovelScript : MonoBehaviour, IPointerClickHandler
             isFollowingMouse = true;
             LevelProperties.Instance.isCarryingObject = true;
             LevelProperties.Instance.objectCarried = gameObject;
-            canvasGroup.alpha = 0.5f;
+            canvasGroup.alpha = 0.8f;
             canvasGroup.blocksRaycasts = true; // Allow interaction during dragging
         }
         else
@@ -89,6 +89,7 @@ public class ShovelScript : MonoBehaviour, IPointerClickHandler
 
     private void DropShovel()
     {
+        Debug.Log(initialPosition);
         // Convert mouse position to world position
         Vector2 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
@@ -111,6 +112,7 @@ public class ShovelScript : MonoBehaviour, IPointerClickHandler
 
                 GameObject animation = Instantiate(shovelAnimationObject, plot.gameObject.transform);
                 StartCoroutine(animation.GetComponent<ToolManualAnimate>().Animate());
+                
                 availableToClick = false;
             } else
             {
@@ -123,7 +125,7 @@ public class ShovelScript : MonoBehaviour, IPointerClickHandler
         }
 
         // Reset the fertilizer to its original position if not dropped on a valid plot
-        //ReturnToPosition();
+        ReturnToPosition();
 
     }
 
