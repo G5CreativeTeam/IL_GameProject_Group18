@@ -5,24 +5,27 @@ using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 [System.Serializable]
 public class PlantScript : MonoBehaviour, IPointerClickHandler
 {
     [HideInInspector] public bool originalPlant = true;
-    [HideInInspector] public bool isWatered;
-    [HideInInspector] public bool isFertilized;
     [HideInInspector] public bool currentlyWP;
     [HideInInspector] public bool currentlyFP;
     [HideInInspector] public float growthTimer;
-    [HideInInspector] public bool isAlive = true;
+    [HideInInspector] public float witherTimer;
     [HideInInspector] public int currentGrowthPhase = 0;
     [HideInInspector] public bool stopGrowing = false;
+    [HideInInspector] public bool isWatered;
+    [HideInInspector] public bool isFertilized;
+    [HideInInspector] public bool isAlive = true;
+    [HideInInspector] public bool isReadyToHarvest = false;
 
     [Header("Growth Setting")]
-    public float firstGrowthTime = 10.0f;
-    public float secondGrowthTime = 10.0f;
-    public float witherTime = 30.0f;
+    public float sproutGrowthTime = 10.0f;
+    public float plantGrowthTime = 10.0f;
+    public float witherTime = 20.0f;
 
     [Header("Attributes")]
     public int health = 30;
@@ -36,6 +39,8 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     //public Sprite secondWitherSprite;
     public Sprite firstBrokenSprite;
     public Sprite secondBrokenSprite;
+    public Sprite firstWitherSprite;
+    public Sprite secondWitherSprite;
 
     [Header("Central Logic")]
     public GameObject levelProperties;
@@ -54,13 +59,12 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
 
     [Header("Animation")]
     public float animSpeed = 0.03f;
-    public float interlude = 0.005f;
+
     
 
     //private string[] growthPhases = new string[] { "sprout", "growing", "ripe", "withered"};
     private float[] growthTimerSet  ;
     private bool isAttacked = false;
-
     
     private RectTransform rectTransform;
     private GameObject indicatorPointer;
@@ -68,9 +72,9 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     // Start is called before the first frame update
     void Start()
     {
-        growthTimerSet = new float[] { firstGrowthTime, secondGrowthTime, witherTime };
+        growthTimerSet = new float[] { sproutGrowthTime, plantGrowthTime };
         growthTimer = growthTimerSet[currentGrowthPhase];
-
+        witherTimer = witherTime;
         isWatered = false;
         isFertilized = false;
         currentlyWP = false;
@@ -79,16 +83,16 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
 
         if (!originalPlant)
         {
-            if (!isWatered || !isFertilized)
+            if ((!isWatered || !isFertilized) )
             {
                 gameObject.GetComponent<SpriteRenderer>().color = new Color(0.4f, 0.4f, 0.4f, 1);
-            }
-            else
+
+            } else
             {
                 gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
             }
 
-            if (!isWatered && !currentlyWP )
+            if (!isWatered && !currentlyWP)
             {
                 WaterPhase();
             }
@@ -97,21 +101,21 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
                 FertilizerPhase();
             }
             StartCoroutine(Animate());
-            //Break
+
+
+
             if (rectTransform == null)
             {
                 rectTransform = GetComponent<RectTransform>();
             }
-
-            // Set the anchors to the center of the parent
             rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
 
-            // Optional: Reset position and size to align with the new anchors
-            rectTransform.anchoredPosition = Vector2.zero; // Position at the center
-            rectTransform.sizeDelta = Vector2.zero;        // No size offset
-            //Break
-            gameObject.GetComponent<RectTransform>().localPosition += new Vector3(0, 25); //note to future programmers, baris ini dibuat karena ada request buat plant yang lebih besar dengan margin yang kurang pas. Jadi plant digeser keatas buat solusi sementara
+            rectTransform.anchoredPosition = Vector2.zero; 
+            rectTransform.sizeDelta = Vector2.zero;        
+            
+            gameObject.GetComponent<RectTransform>().localPosition += new Vector3(0, 25); 
+            //note to future programmers, baris diatas dibuat karena ada request buat plant yang lebih besar dengan margin yang kurang pas. Jadi plant digeser keatas buat solusi sementara
         }
     }
 
@@ -120,17 +124,24 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         
        // Debug.Log(growthTimer);
 
-        if (!originalPlant && currentGrowthPhase != 3) {
+        if (!originalPlant /*&& currentGrowthPhase != phases.Length-1*/) {
 
-            if (!isWatered || !isFertilized)
+            if ((!isWatered || !isFertilized))
             {
                 gameObject.GetComponent<SpriteRenderer>().color = new Color(0.4f, 0.4f, 0.4f, 1);
-            } else
+            }
+            else
             {
                 gameObject.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 1);
             }
+
+            if ((!isWatered || isReadyToHarvest) && currentGrowthPhase != 0 && witherTimer >= 0)
+            {
+                Debug.Log("Withering :" + witherTimer);
+                witherTimer -= Time.deltaTime;
+            }
             //Debug.Log(!isWatered && !currentlyWP);
-            if (!isWatered && !currentlyWP && currentGrowthPhase != 2)
+            if (!isWatered && !currentlyWP && currentGrowthPhase != phases.Length-1)
             {
                 WaterPhase();
             }
@@ -138,22 +149,27 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             {
                 FertilizerPhase();
             }
-            if (growthTimer <= 0 && isWatered && isFertilized)
+            if (growthTimer <= 0 && isWatered && isFertilized && isAlive)
             {
                 GrowNext();
 
             }
-            if (isWatered && isFertilized && !stopGrowing)
+            if (isWatered && isFertilized && !stopGrowing && currentGrowthPhase != phases.Length - 1)
             {
                 growthTimer -= Time.deltaTime;
             }
+            if (witherTimer <= 0 && isAlive )
+            {
+                Debug.Log("Withered");
+                WitherPhase();
+            }
         }
-        if (health <= 0 && isAlive && currentGrowthPhase != 3)
+        if (health <= 0 && isAlive)
         {
             gameObject.GetComponentInParent<SpriteRenderer>().sprite = gameObject.GetComponentInParent<PlotScript>().DryLand;
             BrokenPhase();
             //LevelProperties.Instance.GetComponent<StatsScript>().numOfPlants--;
-            isAlive = false;
+            
         }
     }
 
@@ -165,7 +181,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         }
         if (NotLastPhase()) //Pengondisian untuk mengecek tanaman belum sampai matang/tahap terakhir
         {
-            StopCoroutine(Animate());
+            //StopCoroutine(Animate());
 
             //SpriteRenderer spriteRender = GetComponent<SpriteRenderer>();
             //spriteRender.sprite = plantSprites[currentGrowthPhase + 1];
@@ -173,23 +189,30 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             
             growAudio.GetComponent<AudioSource>().Play();
             if (NotLastPhase()) {
-                growthTimer = growthTimerSet[currentGrowthPhase];
+                if (currentGrowthPhase >= 1)
+                {
+                    growthTimer = growthTimerSet[1];
+                } else
+                {
+                    growthTimer = growthTimerSet[currentGrowthPhase];
+                }
             }
 
             isWatered = false;
-            if (currentGrowthPhase == 2)
+            if (currentGrowthPhase == phases.Length-1)
             {
+                gameObject.transform.localScale = new Vector3(1.15f, 1.15f, 1.15f);
                 HarvestPhase();
             }
-            else if (currentGrowthPhase == 3) {
-                Destroy(indicatorPointer);
-                Instantiate(deathIndicator, gameObject.transform);
-                isAlive = false;
-            }
+            //else if (currentGrowthPhase == 3) {
+            //    Destroy(indicatorPointer);
+            //    Instantiate(deathIndicator, gameObject.transform);
+            //    isAlive = false;
+            //}
             StartCoroutine(Animate());
         } else
         {
-            
+            stopGrowing = true;
         }
 
     }
@@ -221,31 +244,69 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         {
             gameObject.GetComponent<SpriteRenderer>().sprite = firstBrokenSprite;
             
-        } else if (currentGrowthPhase == 2)
+        } else if (currentGrowthPhase >= 2)
         {
             gameObject.GetComponent<SpriteRenderer>().sprite = secondBrokenSprite;
         }
+        isReadyToHarvest = false;
         currentGrowthPhase = -1;
         stopGrowing = true;
+        isAlive = false;
         StopAllCoroutines();
         foreach (Transform child in transform)
         {
             Destroy(child.gameObject);
         }
-        Destroy(indicatorPointer);
+        if (indicatorPointer != null)
+        {
+            Destroy(indicatorPointer);
+        }
+        Instantiate(deathIndicator, gameObject.transform);
+    }
+
+    public void WitherPhase()
+    {
+        if (currentGrowthPhase == 1)
+        {
+            gameObject.GetComponent<SpriteRenderer>().sprite = firstWitherSprite;
+
+        }
+        else if (currentGrowthPhase >= 2)
+        {
+            Debug.Log("withered2");
+            gameObject.GetComponent<SpriteRenderer>().sprite = secondWitherSprite;
+        }
+        gameObject.transform.localPosition = Vector3.zero;
+        gameObject.GetComponent<GridLayoutGroup>().padding.top = 0;
+        isReadyToHarvest = false;
+        currentGrowthPhase = -1;
+        stopGrowing = true;
+        isAlive = false;
+        StopAllCoroutines();
+        foreach (Transform child in transform)
+        {
+            Destroy(child.gameObject);
+        }
+        if (indicatorPointer != null)
+        {
+            Destroy(indicatorPointer);
+        }
         Instantiate(deathIndicator, gameObject.transform);
     }
     public void OnPointerClick(PointerEventData eventData)
     {
 
-        if (currentGrowthPhase == 2) {
+        if (isReadyToHarvest) {
             
             levelProperties.GetComponent<StatsScript>().moneyAvailable = levelProperties.GetComponent<StatsScript>().AddAmount(sellPrice, levelProperties.GetComponent<StatsScript>().moneyAvailable);
             levelProperties.GetComponent<StatsScript>().score = levelProperties.GetComponent<StatsScript>().AddAmount(scoreValue * 2, levelProperties.GetComponent<StatsScript>().score);
             levelProperties.GetComponent<StatsScript>().plantsHarvested = levelProperties.GetComponent<StatsScript>().AddAmount(1, levelProperties.GetComponent<StatsScript>().plantsHarvested);
             sellAudio.GetComponent<AudioSource>().Play();
             PlantAdd(plant);
+            
+            
             isWatered = false;
+            //gameObject.GetComponentInParent<SpriteRenderer>().sprite = gameObject.GetComponentInParent<PlotScript>().DryLand;
             if (!LevelProperties.Instance.unlimitedMoney)
             {
                 GameObject floatingnum = LevelProperties.Instance.SpawnFloatingNumber(transform.parent, sellPrice);
@@ -253,15 +314,11 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             }
             
             Destroy(gameObject);
+            gameObject.GetComponentInParent<PlotScript>().hasPlant = false;
             Destroy(indicatorPointer);
             
 
         }
-    }
-
-    public void BlinkEffect()
-    {
-        gameObject.GetComponent<SpriteRenderer>().color = new Color(0.3F, 0.3F, 0.3f, 0.8f);
     }
 
     public IEnumerator TakeDamage(int amount)
@@ -290,11 +347,6 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
             Destroy(indicator);
             isAttacked = false;
         }
-        else
-        {
-            // Wait if already being attacked
-            yield return new WaitForSeconds(1.5f);
-        }
     }
 
 
@@ -311,7 +363,7 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
         indicatorPointer.transform.SetParent(gameObject.transform.parent);
         indicatorPointer.transform.localPosition = new Vector3(0, 12, 35);
         indicatorPointer.transform.localScale = new Vector3(1.12f, 1.12f, 1.12f);
-        
+        isReadyToHarvest = true;
         
     }
 
@@ -334,17 +386,21 @@ public class PlantScript : MonoBehaviour, IPointerClickHandler
     public IEnumerator Animate()
     {
         int index = 0;
-        while (true)
+        if (currentGrowthPhase >= 0)
         {
-            while (index < phases[currentGrowthPhase].plantSprites.Length)
+            while (true)
             {
-                gameObject.GetComponent<SpriteRenderer>().sprite = phases[currentGrowthPhase].plantSprites[index];
+                while (index < phases[currentGrowthPhase].plantSprites.Length)
+                {
+                    gameObject.GetComponent<SpriteRenderer>().sprite = phases[currentGrowthPhase].plantSprites[index];
 
-                yield return new WaitForSeconds(animSpeed);
-                index++;
+                    yield return new WaitForSeconds(animSpeed);
+                    index++;
+                }
+                index = 0;
             }
-            index = 0;
         }
+        
 
     }
 }

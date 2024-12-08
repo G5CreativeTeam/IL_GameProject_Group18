@@ -12,10 +12,10 @@ public class MainLogicController : MonoBehaviour
     
     public void PlayGame(int level)
     {
-        if (LevelProperties.Instance.nextLevelIndex >= 0)
-        {
-            level = LevelProperties.Instance.nextLevelIndex;
-        }
+        //if (LevelProperties.Instance != null )
+        //{
+        //    level = LevelProperties.Instance.nextLevelIndex;
+        //}
         loadingScreen.SetActive(true);
         
         StartCoroutine(Loading(level));
@@ -41,8 +41,12 @@ public class MainLogicController : MonoBehaviour
         while (!operation.isDone) {
             float progress = operation.progress;
             Debug.Log(progress);
-            loader.value = Mathf.Clamp01(progress / 0.9f);
-            loader.SetValueWithoutNotify(Mathf.Clamp01(progress / 0.9f));
+            if (loader !=null)
+            {
+                loader.value = Mathf.Clamp01(progress / 0.9f);
+                loader.SetValueWithoutNotify(Mathf.Clamp01(progress / 0.9f));
+            }
+            
             yield return null;
         }
     }

@@ -43,6 +43,9 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     [Header("Shortcut Keys")]
     public KeyCode pause;
 
+    [Header("Audio")]
+    public AudioSource EndSound;
+
     [HideInInspector] public float elapsedTime = 0.0f;
     [HideInInspector] public bool isCarryingObject = false;
     [HideInInspector] public GameObject objectCarried;
@@ -143,7 +146,8 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         FinishedScreen.SetActive(true);
         yield return new WaitForSeconds(2);
         FinishedScreen.SetActive(false);
-        
+        //EndSound.Play();
+
         ResultScreen.SetActive(true);
         StopGame();
     }

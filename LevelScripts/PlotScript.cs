@@ -85,18 +85,22 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
             if (plantObject.GetComponent<PlantScript>().isWatered && gameObject.GetComponent<SpriteRenderer>().sprite != WetLand)
             {
                 gameObject.GetComponent<SpriteRenderer>().sprite = WetLand;
+                Debug.Log("ISWATERED");
             } else if ( !plantObject.GetComponent<PlantScript>().isWatered)
             {
                 gameObject.GetComponent<SpriteRenderer>().sprite = DryLand;
             }
+        } else
+        {
+            gameObject.GetComponent<SpriteRenderer>().sprite = DryLand;
         }
     }
     
-    public void SeedDrop(SeedScript draggableItem)
+    public void SeedDrop(SeedScript item)
     {
-        if (draggableItem.plant != null)
+        if (item.plant != null)
         {
-            plantObject = Instantiate(draggableItem.plant, transform);
+            plantObject = Instantiate(item.plant, transform);
 
 
             plant = plantObject.GetComponent<PlantScript>();
@@ -112,13 +116,16 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
             //}
             
             type = plant.GetComponent<PlantScript>().plant;
-            draggableItem.cooldownTimer = 0;
+            item.originalSeed.GetComponent<SeedScript>().cooldownTimer = 0;
             if (!LevelProperties.Instance.unlimitedMoney)
             {
-                LevelProperties.Instance.GetComponent<StatsScript>().DeductAmount(draggableItem.price);
+                LevelProperties.Instance.GetComponent<StatsScript>().DeductAmount(item.price);
             }
             hasPlant = true;
            
+        } else
+        {
+            Debug.Log("Couldn't plant");
         }
     }
     public void WateringCanDrop()
@@ -128,6 +135,7 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().isWatered = true;
 
             transform.GetChild(0).gameObject.GetComponent<PlantScript>().currentlyWP = false;
+            transform.GetChild(0).gameObject.GetComponent<PlantScript>().witherTimer = transform.GetChild(0).gameObject.GetComponent<PlantScript>().witherTime;
             waterAudio.GetComponent<AudioSource>().Play();
             Destroy(transform.GetChild(0).Find("WaterIndicator(Clone)").gameObject);
             
@@ -140,6 +148,7 @@ public class PlotScript : MonoBehaviour, IDropHandler, IDataPersistence
         type = PlantType.none;
         shovelAudio.GetComponent<AudioSource>().Play();
         plant.levelProperties.GetComponent<StatsScript>().numOfPlants--;
+        plant.levelProperties.GetComponent<StatsScript>().plantsLost++;
         for (int i = 0;i<transform.childCount;i++)
         {
             Destroy(transform.GetChild(i).gameObject);

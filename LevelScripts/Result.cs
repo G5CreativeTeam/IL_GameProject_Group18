@@ -10,8 +10,8 @@ public class Result : MonoBehaviour
     public GameObject LostCharacter;
 
     [Header("Messages")]
-    public string WinMessage = "Great Job!";
-    public string LoseMessage = "Better luck next time!";
+    public GameObject WinMessage ;
+    public GameObject LoseMessage ;
 
     [Header("Labels")]
     public GameObject HeaderResultLabel;
@@ -24,7 +24,7 @@ public class Result : MonoBehaviour
     public GameObject winButtonGroup;
     public GameObject loseButtonGroup;
     
-    private string ResultMessage;
+
     
     private bool status = false;
 
@@ -48,18 +48,18 @@ public class Result : MonoBehaviour
         }
         if (status)
         {
-            ResultMessage = WinMessage;
+            WinMessage.SetActive(true);
             WinCharacter.SetActive(true);
             winButtonGroup.SetActive(true);
         }
         else
         {
-            ResultMessage = LoseMessage;
+            LoseMessage.SetActive(true);
             LostCharacter.SetActive(true);
             loseButtonGroup.SetActive(true);
         }
 
-        HeaderResultLabel.GetComponent<TextMeshProUGUI>().text = $"{ResultMessage}";
+
 
     }
 }

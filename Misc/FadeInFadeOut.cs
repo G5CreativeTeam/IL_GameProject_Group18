@@ -10,8 +10,8 @@ public class FadeInFadeOut : MonoBehaviour
     private void Start()
     {
         // Get or add a CanvasGroup component to control alpha
-        canvasGroup = gameObject.GetComponent<CanvasGroup>();
-        if (canvasGroup == null)
+
+        if (gameObject.GetComponent<CanvasGroup>() == null)
         {
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
