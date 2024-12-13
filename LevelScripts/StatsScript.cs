@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using System.Linq;
+using System.ComponentModel;
 
 public class StatsScript : MonoBehaviour, IDataPersistence
 {
     [HideInInspector] public int score = 0;
     [HideInInspector] public int seedPlanted = 0;
-    [HideInInspector] public int plantsLost = 0;
+    public int plantsLost = 0;
     [HideInInspector] public int plantsHarvested = 0;
-    [HideInInspector] public int numOfPlants = 0;
-    [HideInInspector] public int numOfPests = 0;
+    
+    public int numOfPlants = 0;
+    public int numOfPests = 0;
+    
     [HideInInspector] public int carrotsHarvested = 0;
     [HideInInspector] public int potatoHarvested = 0;
     [HideInInspector] public int yamHarvested = 0;

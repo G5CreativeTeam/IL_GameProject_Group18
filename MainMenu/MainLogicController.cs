@@ -36,6 +36,7 @@ public class MainLogicController : MonoBehaviour
 
     IEnumerator Loading(int level)
     {
+        yield return new WaitForSeconds(3);
         AsyncOperation operation = SceneManager.LoadSceneAsync(level);
         
         while (!operation.isDone) {

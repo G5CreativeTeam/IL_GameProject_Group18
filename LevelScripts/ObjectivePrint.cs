@@ -12,13 +12,13 @@ public class ObjectivePrint : MonoBehaviour
     void Start()
     {
         textHandler = GetComponent<TextMeshProUGUI>();
-        textHandler.text = $"{objective.label} {objective.targetValue}";
+        textHandler.text = $"{objective.prefixLabel} {objective.targetValue} {objective.suffixLabel}";
     }
 
     // Update is called once per frame
     void Update()
     {
-        textHandler.text = $"{objective.label} {objective.targetValue}";
+        textHandler.text = $"{objective.prefixLabel} {objective.targetValue} {objective.suffixLabel}";
 
         if (objective.completed)
         {

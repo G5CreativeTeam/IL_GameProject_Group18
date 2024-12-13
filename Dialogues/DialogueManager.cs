@@ -12,6 +12,7 @@ public class DialogueManager : MonoBehaviour
     public GameObject textBox;
     public GameObject customButton;
     public GameObject optionPanel;
+    public GameObject additionalObject;
     public GameObject nextStep;
     public float TextSpeed = 1;
 
@@ -25,10 +26,7 @@ public class DialogueManager : MonoBehaviour
     static Choice choiceSelected;
 
     // Start is called before the first frame update
-    void Start()
-    {
-        //InitiateDialogue();
-    }
+ 
 
     private void Update()
     {
@@ -38,6 +36,7 @@ public class DialogueManager : MonoBehaviour
             if (message.text != story.currentText)
             {
                 message.text = story.currentText;
+                StopAllCoroutines(); 
             } else { 
             //Is there more to the story?
                 if (story.canContinue)
@@ -65,7 +64,9 @@ public class DialogueManager : MonoBehaviour
 
     public void InitiateDialogue()
     {
-        
+        if (additionalObject != null) {
+            additionalObject.SetActive(true);
+        }
         story = new Story(inkFile.text);
         nametag = textBox.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
         message = textBox.transform.GetChild(1).GetComponent<TextMeshProUGUI>();
@@ -76,15 +77,22 @@ public class DialogueManager : MonoBehaviour
     // Finished the Story (Dialogue)
     private void FinishDialogue()
     {
+        if (nextStep != null)
+        {
+            nextStep.SetActive(true);
+        }
         
-        nextStep.SetActive(true);
     }
 
     // Advance through the story 
     public void AdvanceDialogue()
     {
         GameObject Character;
-        textBox.transform.GetChild(2).gameObject.SetActive(false);
+        if (textBox.transform.childCount >= 3)
+        {
+            textBox.transform.GetChild(2).gameObject.SetActive(false);
+        }
+        
         if (story.currentTags.Count != 0)
         {
             Character = GameObject.Find(story.currentTags[1]);
@@ -92,6 +100,7 @@ public class DialogueManager : MonoBehaviour
         }
         
         string currentSentence = story.Continue();
+        currentSentence = story.currentText;
 
         if (story.currentTags.Count != 0)
         {
@@ -114,11 +123,17 @@ public class DialogueManager : MonoBehaviour
         int index = 0;
         while (message.text != sentence)
         {
+
             message.text += sentence[index];
             index++;
-            yield return new WaitForSeconds(0.1f / TextSpeed);
+
+            yield return new WaitForSecondsRealtime(0.1f / TextSpeed);
+            
         }
-        textBox.transform.GetChild(2).gameObject.SetActive(true);
+        if (textBox.transform.childCount >= 3)
+        {
+            textBox.transform.GetChild(2).gameObject.SetActive(true);
+        }
 
     }
 
@@ -182,7 +197,6 @@ public class DialogueManager : MonoBehaviour
             switch (prefix.ToLower())
             {
                 case "anim":
-                    SetAnimation(param);
                     break;
                 case "color":
                     SetTextColor(param);
@@ -190,10 +204,8 @@ public class DialogueManager : MonoBehaviour
             }
         }
     }
-    void SetAnimation(string _name)
-    {
-        CharacterScript cs = GameObject.FindObjectOfType<CharacterScript>();
-    }
+
+
     void SetTextColor(string _color)
     {
         switch (_color)

@@ -21,8 +21,8 @@ public class GameData
     public bool deactivateDialogue;
 
     public SerializableList<PlotData> plotList;
+    public SerializableList<PestData> pestList; 
 
-    public GameObject[] pests;
     public float elapsedTime;
 
     public GameData()
@@ -42,7 +42,8 @@ public class GameData
         this.deactivateDialogue = false;
 
 
-        plotList = new SerializableList<PlotData>();
+        plotList = new();
+        pestList = new();
     }
 
     
@@ -54,57 +55,38 @@ public class PlotData
     public string id;
     public bool hasPlant;
     public PlantType PlantType;
-    public GameObject plantObject;
-    public PlantScript plant;
     public PlantData plantData;
 }
 
 [System.Serializable]
 public class PlantData
 {
-    public bool originalPlant;
-    public bool isWatered;
-    public bool isFertilized;
+    public bool isWatered = false;
+    public bool isFertilized = false;
     public bool currentlyWP;
     public bool currentlyFP;
+    public bool currentlyHP;
+    public bool currentlyBroken;
+    public bool currentlyWithered;
     public float growthTimer;
+    public float witherTimer;
+    public int currentGrowthPhase;
+    public bool stopGrowing = false;
+    public bool isAlive = true;
+    public bool isReadyToHarvest = false;
+    public int health ;
+    public bool isAttacked;
+}
 
-    //[Header("Growth Setting")]
-    //public float firstGrowthTime = 10.0f;
-    //public float secondGrowthTime = 10.0f;
-    //public float witherTime = 30.0f;
+[System.Serializable]
+public class PestData
+{
+    public float x;
+    public float y;
+    public float speed;
+    public bool originalPest;
+    public bool newSpawn;
+    public pestType type;
 
-    [Header("Attributes")]
-    public int health;
-    //public int sellPrice;
-    //public int scoreValue;
-    //public PlantType plant;
-    //public Sprite[] plantSprites;
-    //public PlantPhases[] phases;
 
-    //[Header("Central Logic")]
-    //public GameObject levelProperties;
-
-    //[Header("Indicators")]
-    //public GameObject waterIndicator;
-    //public GameObject fertilizeIndicator;
-    //public GameObject harvestIndicator;
-    //public GameObject attackedIndicator;
-    //public GameObject deathIndicator;
-
-    //[Header("Audio")]
-    //public GameObject growAudio;
-    //public GameObject sellAudio;
-    //public GameObject witherAudio;
-
-    //[Header("Animation")]
-    //public float animSpeed = 0.03f;
-    //public float interlude = 0.005f;
-    
-    //private string[] growthPhases = new string[] { "sprout", "growing", "ripe", "withered"};
-    //private float[] growthTimerSet;
-    private int currentGrowthPhase;
-    private bool isAttacked;
-    //private RectTransform rectTransform;
-    //private GameObject indicatorPointer;
 }

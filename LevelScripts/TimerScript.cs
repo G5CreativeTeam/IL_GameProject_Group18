@@ -7,28 +7,37 @@ public class TimerScript : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI timerText;
     [SerializeField] GameObject EventSystem;
-    float remainingTime;
+    float timerValue;
+    float ongoingTime;
     // Update is called once per frame
     private void Start()
     {
-        remainingTime = EventSystem.GetComponent<LevelProperties>().levelTime+1;
+        timerValue = EventSystem.GetComponent<LevelProperties>().levelTime+1;
     }
 
     void Update()
     {
-        if (remainingTime > 0)
+        if (!LevelProperties.Instance.endlessMode)
         {
-            remainingTime = (EventSystem.GetComponent<LevelProperties>().levelTime) - EventSystem.GetComponent<LevelProperties>().elapsedTime;
-            if (remainingTime <= 6)
+            if (timerValue > 0)
             {
-                timerText.color = new Color(0.9F, 0, 0, 1);
+                timerValue = (EventSystem.GetComponent<LevelProperties>().levelTime) - LevelProperties.Instance.elapsedTime;
+                if (timerValue <= 6)
+                {
+                    timerText.color = new Color(0.9F, 0, 0, 1);
+                }
+            }
+            else
+            {
+                timerValue = 0;
             }
         } else
         {
-            remainingTime = 0;
+            timerValue = LevelProperties.Instance.elapsedTime;
         }
-        int minutes = Mathf.FloorToInt(remainingTime / 60);
-        int seconds = Mathf.FloorToInt(remainingTime % 60);
+        
+        int minutes = Mathf.FloorToInt(timerValue / 60);
+        int seconds = Mathf.FloorToInt(timerValue % 60);
         timerText.text = string.Format("{0:00}:{1:00}",minutes,seconds);
     }
 }

@@ -16,7 +16,7 @@ public class SeedScript : MonoBehaviour, IPointerClickHandler/*, IBeginDragHandl
     public float cooldownTime = 0;
 
     private float percentage;
-    private int emptyCoordinates = 45;
+    private readonly int emptyCoordinates = 45;
     [SerializeField] private KeyCode shortcutKey = KeyCode.Alpha1;
 
     [HideInInspector] public float cooldownTimer;
@@ -47,7 +47,6 @@ public class SeedScript : MonoBehaviour, IPointerClickHandler/*, IBeginDragHandl
     {
         if (Input.GetKeyDown(shortcutKey) && !LevelProperties.Instance.isCarryingObject && availableToClick && isOriginalSeed)
         {
-            Debug.Log("CHeck");
             AttemptPickup();
         } 
         if (Input.GetKeyDown(shortcutKey) 

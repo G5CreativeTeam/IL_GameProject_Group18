@@ -12,12 +12,15 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     [Header("General Properties")]
     public string levelText = "Level";
     public int levelTime = 60;
-    public bool noTimerMode = false;
+    public bool endlessMode = false;
     public bool unlimitedMoney = false;
     public bool deactivateDialogue = false;
+    public bool activateCountdown = true;
     public GameObjective[] Targets;
+    public GameObjective[] LoseConditions;
     public int nextLevelIndex;
-
+    public float elapsedTime = 0.0f;
+    public bool gameCompleted = false;
 
     [Header("General Pest Properties")]
     //public float pestSpawnRate = 1;
@@ -46,13 +49,13 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     [Header("Audio")]
     public AudioSource EndSound;
 
-    [HideInInspector] public float elapsedTime = 0.0f;
+   
     [HideInInspector] public bool isCarryingObject = false;
     [HideInInspector] public GameObject objectCarried;
 
 
 
-    private bool gameOngoing = false;
+    [HideInInspector] public bool gameOngoing = false;
 
     public static LevelProperties Instance { get; private set; }
     
@@ -77,37 +80,66 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
             InitiateGame();
         }
         LevelLabelObject.GetComponent<TextMeshProUGUI>().text = levelText;
-        Debug.Log(LevelLabelObject.GetComponent<TextMeshProUGUI>().text);
         
 
-        if (noTimerMode)
+        if (endlessMode)
         {
-            GameUI.transform.Find("Timer").gameObject.SetActive(false);
-            GameUI.transform.Find("Money").gameObject.SetActive(false);
             GameUI.transform.Find("Objectives").gameObject.SetActive(false);
 
+        }
+        if (unlimitedMoney)
+        {
+            GameUI.transform.Find("Money").gameObject.SetActive(false);
         }
         foreach (GameObjective target in Targets)
         {
             target.Initialize(gameObject.GetComponent<StatsScript>());
         }
+        foreach (GameObjective target in LoseConditions)
+        {
+            target.Initialize(gameObject.GetComponent<StatsScript>());
+        }
         MoneyCounter.GetComponent<TextMeshProUGUI>().text = gameObject.GetComponent<StatsScript>().moneyAvailable.ToString();
+        deactivateDialogue = true;
     }
 
     // Update is called once per frame
     void Update()
     {
         MoneyCounter.GetComponent<TextMeshProUGUI>().text = gameObject.GetComponent<StatsScript>().moneyAvailable.ToString();
-        if (gameOngoing)
+        if (gameOngoing )
         {
-            elapsedTime += Time.deltaTime;
+            if (!endlessMode)
+            {
+                elapsedTime += Time.deltaTime;
+
+            }
+            else
+            {
+                if (GetComponent<StatsScript>().numOfPlants > 0)
+                {
+                    elapsedTime += Time.deltaTime;
+                }
+            }
+        }
+        if (!endlessMode)   
+        {
+            foreach (GameObjective target in Targets)
+            {
+                target.UpdateCompletion();
+            }
+        } else
+        {
+            foreach (GameObjective target in LoseConditions)
+            {
+                target.UpdateCompletion();
+
+                Debug.Log("routinecheck" + target.CurrentValue);
+            }
             
         }
-        foreach (GameObjective target in Targets)
-        {
-            target.UpdateCompletion();
-            
-        }
+
+        
 
         if (Input.GetKeyDown(pause) && gameOngoing)
         {
@@ -123,12 +155,15 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
             }
         }
 
-        if (!noTimerMode)
+        if (!endlessMode)
         {
             if (RoundFinished() && gameOngoing)
             {
                 StartCoroutine(EndResults());
             }
+        }else
+        {
+            CheckEndlessRound();
         }
         
 
@@ -137,7 +172,14 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     public void InitiateGame()
     {
         StartTime();
-        StartCoroutine(StartCountdown());
+        if (activateCountdown)
+        {
+            StartCoroutine(StartCountdown());
+        } else
+        {
+            StartGame();
+        }
+        
     }
 
     IEnumerator EndResults()
@@ -149,6 +191,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         //EndSound.Play();
 
         ResultScreen.SetActive(true);
+        gameCompleted = true;
         StopGame();
     }
 
@@ -214,9 +257,25 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         SceneManager.LoadSceneAsync(level);
     }
 
-    public void EndGame()
+    public void CheckEndlessRound()
     {
-        elapsedTime = (levelTime + 1) - 5;
+        bool Status = false;
+        foreach (GameObjective target in LoseConditions)
+        {
+            Status = target.completed;
+            Debug.Log("Im checking!" + target.completed);
+            Debug.Log(target.targetValue + "+" + target.CurrentValue);
+            if (Status)
+            {
+                break;
+            }
+        }
+        if (Status && gameOngoing) 
+        {
+            Debug.Log("Lost?");
+            StartCoroutine(EndResults());
+
+        }
     }
 
     public void ExitGame()
@@ -322,12 +381,14 @@ public enum StatVariable
     potatoHarvested ,
     yamHarvested ,
     moneyAvailable,
+    plantsLost,
 }
 
 [System.Serializable]
 public class GameObjective
 {
-    public string label;
+    public string prefixLabel;
+    public string suffixLabel;
     public StatVariable targetVariable; // Enum for selecting variables
     public int targetValue;
     [HideInInspector] public bool completed = false;
@@ -362,6 +423,8 @@ public class GameObjective
                     return statScript.yamHarvested;
                 case StatVariable.potatoHarvested:
                     return statScript.potatoHarvested;
+                case StatVariable.plantsLost:
+                    return statScript.plantsLost;
                 default:
                     return 0;
             }
@@ -375,4 +438,17 @@ public class GameObjective
     }
 
     
+}
+
+public class ReadOnlyAttribute : PropertyAttribute { }
+
+[CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
+public class ReadOnlyDrawer : PropertyDrawer
+{
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+    {
+        GUI.enabled = false; // Disable editing in the Inspector
+        EditorGUI.PropertyField(position, property, label, true);
+        GUI.enabled = true; // Re-enable editing
+    }
 }

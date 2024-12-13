@@ -26,7 +26,7 @@ public class GameDataPersistence : MonoBehaviour
 
     private void Start()
     {
-        this.dataHandler = new FileDataHandler(Application.persistentDataPath, fileName);
+        this.dataHandler = new FileDataHandler(Application.persistentDataPath+"/saves", fileName);
         this.dataPersistenceObjects = FindAllDataPersistenceObjects();
         LoadGame();
     }
@@ -49,7 +49,7 @@ public class GameDataPersistence : MonoBehaviour
             dataPersistanceObj.LoadData(gameData);
             
         }
-        
+        Debug.Log("Loaded data");
     }
 
     public void SaveGame()
@@ -63,10 +63,13 @@ public class GameDataPersistence : MonoBehaviour
 
 
         dataHandler.Save(gameData);
+        Debug.Log("Saved data");
     }
 
     private void OnApplicationQuit()
     {
+        this.dataHandler = new FileDataHandler(Application.persistentDataPath + "/saves", fileName);
+        this.dataPersistenceObjects = FindAllDataPersistenceObjects();
         SaveGame();
     }
 

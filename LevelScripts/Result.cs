@@ -21,20 +21,33 @@ public class Result : MonoBehaviour
     public GameObject TubersPlantedLabel;
     public GameObject TargetLabel;
 
+    public TextAsset[] WinInkFiles;
+    public TextAsset[] LostInkFiles;
+
     public GameObject winButtonGroup;
     public GameObject loseButtonGroup;
-    
 
+    public DialogueManager DialogueManager;
     
     private bool status = false;
 
     void OnEnable()
     {
+        DialogueManager = GetComponent<DialogueManager>();
+        int randomNumber;
         MoneyLabel.GetComponent<TextMeshProUGUI>().text = LevelProperties.Instance.GetComponent<StatsScript>().moneyAvailable.ToString();
         //ScoreLabel.GetComponent<TextMeshProUGUI>().text = LevelProperties.Instance.GetComponent<StatsScript>().score.ToString();
         TubersLostLabel.GetComponent<TextMeshProUGUI>().text = LevelProperties.Instance.GetComponent<StatsScript>().plantsLost.ToString();
         TubersPlantedLabel.GetComponent<TextMeshProUGUI>().text = LevelProperties.Instance.GetComponent<StatsScript>().plantsHarvested.ToString();
-        TargetLabel.GetComponent<TextMeshProUGUI>().text = LevelProperties.Instance.GetComponent<LevelProperties>().Targets[0].targetValue.ToString();
+        if (!LevelProperties.Instance.endlessMode)
+        {
+            TargetLabel.GetComponent<TextMeshProUGUI>().text = LevelProperties.Instance.GetComponent<LevelProperties>().Targets[0].targetValue.ToString();
+        }
+        else
+        {
+            TargetLabel.GetComponent<TextMeshProUGUI>().text = ((int)LevelProperties.Instance.elapsedTime).ToString();
+        }
+        
 
 
         foreach (GameObjective target in LevelProperties.Instance.Targets)
@@ -51,12 +64,16 @@ public class Result : MonoBehaviour
             WinMessage.SetActive(true);
             WinCharacter.SetActive(true);
             winButtonGroup.SetActive(true);
+            randomNumber = Random.Range(0, WinInkFiles.Length);
+            DialogueManager.inkFile = WinInkFiles[randomNumber];
         }
         else
         {
             LoseMessage.SetActive(true);
             LostCharacter.SetActive(true);
             loseButtonGroup.SetActive(true);
+            randomNumber = Random.Range(0, LostInkFiles.Length);
+            DialogueManager.inkFile = LostInkFiles[randomNumber];
         }
 
 
