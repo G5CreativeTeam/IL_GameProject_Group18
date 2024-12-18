@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Result : MonoBehaviour
 {
@@ -66,6 +67,7 @@ public class Result : MonoBehaviour
             winButtonGroup.SetActive(true);
             randomNumber = Random.Range(0, WinInkFiles.Length);
             DialogueManager.inkFile = WinInkFiles[randomNumber];
+            LevelProperties.Instance.gameCompleted = true;
         }
         else
         {
@@ -76,7 +78,8 @@ public class Result : MonoBehaviour
             DialogueManager.inkFile = LostInkFiles[randomNumber];
         }
 
-
+        PlayerPrefs.SetInt(SceneManager.GetActiveScene().name + "-complete", status ? 1 : 0);
+        PlayerPrefs.SetInt(SceneManager.GetActiveScene().name + "-highscore", LevelProperties.Instance.GetComponent<StatsScript>().moneyAvailable);
 
     }
 }

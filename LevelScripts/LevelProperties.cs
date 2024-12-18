@@ -71,6 +71,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     // Start is called before the first frame update
     private void Start()
     {
+        Time.timeScale = 0;
         if (dialogueUI.activeInHierarchy == false && !deactivateDialogue)
         {
             dialogueUI.SetActive(true);
@@ -171,7 +172,7 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
 
     public void InitiateGame()
     {
-        StartTime();
+        //StartTime();
         if (activateCountdown)
         {
             StartCoroutine(StartCountdown());
@@ -191,7 +192,6 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         //EndSound.Play();
 
         ResultScreen.SetActive(true);
-        gameCompleted = true;
         StopGame();
     }
 
@@ -201,21 +201,22 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
         countdownScreen.SetActive(true);
 
         countdownScreen.transform.GetChild(0).gameObject.SetActive(true);
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSecondsRealtime(1);
 
         countdownScreen.transform.GetChild(0).gameObject.SetActive(false);
         countdownScreen.transform.GetChild(1).gameObject.SetActive(true);
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSecondsRealtime(1);
 
         countdownScreen.transform.GetChild(1).gameObject.SetActive(false);
         countdownScreen.transform.GetChild(2).gameObject.SetActive(true);
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSecondsRealtime(1);
         countdownScreen.transform.GetChild(2).gameObject.SetActive(false);
         countdownScreen.transform.GetChild(3).gameObject.SetActive(true);
         
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSecondsRealtime(1);
         countdownScreen.SetActive(false);
         StartGame();
+        StartTime();
     }
     public bool RoundFinished()
     {
@@ -358,12 +359,14 @@ public class LevelProperties : MonoBehaviour, IDataPersistence
     {
         this.elapsedTime = gameData.elapsedTime;
         this.deactivateDialogue = gameData.deactivateDialogue;
+        this.gameCompleted = gameData.gameCompleted;
     }
 
     public void SaveData(ref GameData gameData)
     {
         gameData.elapsedTime = this.elapsedTime;
         gameData.deactivateDialogue = this.deactivateDialogue;
+        gameData.gameCompleted = this.gameCompleted;
     }
 
     public void NextLevel ()
@@ -440,15 +443,4 @@ public class GameObjective
     
 }
 
-public class ReadOnlyAttribute : PropertyAttribute { }
 
-[CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
-public class ReadOnlyDrawer : PropertyDrawer
-{
-    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-    {
-        GUI.enabled = false; // Disable editing in the Inspector
-        EditorGUI.PropertyField(position, property, label, true);
-        GUI.enabled = true; // Re-enable editing
-    }
-}

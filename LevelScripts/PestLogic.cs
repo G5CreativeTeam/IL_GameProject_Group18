@@ -14,7 +14,7 @@ public class PestLogic : MonoBehaviour, IDataPersistence
     public int size = 1;
     public float swipeSpeed = 5f;
     public float minSwipeDistance = 0.5f; // Minimum distance to qualify as a swipe
-    public pestType type;
+    public PestType type;
     public PestManager manager;
 
     [Header("Animation")]
@@ -27,9 +27,9 @@ public class PestLogic : MonoBehaviour, IDataPersistence
     [Tooltip("Only if on the menu")]
     public GameObject menuPestSpawner;
 
-    [HideInInspector] public GameObject target;
-    public bool originalPest;
-    [HideInInspector] public bool isCurrentlyColliding;
+    [ReadOnly] public GameObject target;
+    [ReadOnly] public bool originalPest;
+    [ReadOnly] public bool isCurrentlyColliding;
 
     [ReadOnly] public float attackTimer;
     [ReadOnly] private GameObject currentPlant; // Tracks the plant being attacked
@@ -219,7 +219,7 @@ public void Update()
     {
         if (!hasSwiped)
         {
-            if (col.gameObject.TryGetComponent<PlantScript>(out PlantScript plant))
+            if (col.gameObject.TryGetComponent<PlantScript>(out _))
             {
                 currentPlant = col.gameObject;
             }
@@ -438,6 +438,10 @@ public void Update()
         PestData pestData = new();
         pestData.x = gameObject.transform.position.x;
         pestData.y = gameObject.transform.position.y;
+        pestData.z = gameObject.transform.position.z;
+        pestData.scaleX = gameObject.transform.localScale.x;
+        pestData.scaleY = gameObject.transform.localScale.y;
+        pestData.scaleZ = gameObject.transform.localScale.z;
         pestData.speed = speed;
         pestData.originalPest = originalPest;
         pestData.type = type;
@@ -445,8 +449,10 @@ public void Update()
 
         if (!originalPest)
         {
-            Debug.Log("Masuk");
-            gameData.pestList.Add(pestData);
+            
+            Debug.Log("Masuk"+pestData);
+            manager.data.Add(pestData);
+            Debug.Log(gameData.pestList);
             Debug.Log("keluar");
         }
         
@@ -557,7 +563,7 @@ public void Update()
     //}
 }
 [System.Serializable]
-public enum pestType
+public enum PestType
 {
     green,
     red

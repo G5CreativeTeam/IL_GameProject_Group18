@@ -3,30 +3,50 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Cinemachine.DocumentationSortingAttribute;
 
 public class MainLogicController : MonoBehaviour
 {
     [HideInInspector] public bool havePlayedBefore = false;
     public GameObject loadingScreen;
     public Slider loader;
-    
-    public void PlayGame(int level)
+    public GameObject warningObject;
+    public static MainLogicController Instance { get; private set; }
+
+    public void LoadScene(int scene)
     {
         //if (LevelProperties.Instance != null )
         //{
         //    level = LevelProperties.Instance.nextLevelIndex;
         //}
+        ActivateLoadingScreen(scene);
+        
+        
+        Time.timeScale = 1;
+        //if (!havePlayedBefore)
+        //{
+        //    havePlayedBefore = true;
+        //    PlayerPrefs.SetInt("havePlayed", 1);
+        //}
+    }
+
+    public void PlayLevel(int level)
+    {
+        if ((PlayerPrefs.GetInt(SceneManager.GetSceneByBuildIndex(level).name + "-complete") == 0) && SaveFileExists(SceneManager.GetSceneByBuildIndex(level).name + "-saveFile.json"))
+        {
+            warningObject.SetActive(true);
+            warningObject.GetComponent<WarningScreen>().desiredLevel = level;
+        }else
+        {
+            LoadScene(level);
+        }
+    }
+
+    public void ActivateLoadingScreen(int level)
+    {
         loadingScreen.SetActive(true);
         
         StartCoroutine(Loading(level));
-        Time.timeScale = 1;
-        if (!havePlayedBefore)
-        {
-            havePlayedBefore = true;
-            PlayerPrefs.SetInt("havePlayed", 1);
-        }
-        
-        
     }
 
     public void QuitGame()
@@ -51,4 +71,11 @@ public class MainLogicController : MonoBehaviour
             yield return null;
         }
     }
+
+    public bool SaveFileExists(string fileName)
+    {
+        string filePath = Application.persistentDataPath + "/saves/" + fileName;
+        return System.IO.File.Exists(filePath);
+    }
+
 }

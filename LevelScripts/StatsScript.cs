@@ -7,17 +7,17 @@ using System.ComponentModel;
 
 public class StatsScript : MonoBehaviour, IDataPersistence
 {
-    [HideInInspector] public int score = 0;
-    [HideInInspector] public int seedPlanted = 0;
-    public int plantsLost = 0;
-    [HideInInspector] public int plantsHarvested = 0;
+    [ReadOnly] public int score = 0;
+    [ReadOnly] public int seedPlanted = 0;
+    [ReadOnly] public int plantsLost = 0;
+    [ReadOnly] public int plantsHarvested = 0;
     
-    public int numOfPlants = 0;
-    public int numOfPests = 0;
-    
-    [HideInInspector] public int carrotsHarvested = 0;
-    [HideInInspector] public int potatoHarvested = 0;
-    [HideInInspector] public int yamHarvested = 0;
+    [ReadOnly] public int numOfPlants = 0;
+    [ReadOnly] public int numOfPests = 0;
+
+    [ReadOnly] public int carrotsHarvested = 0;
+    [ReadOnly] public int potatoHarvested = 0;
+    [ReadOnly] public int yamHarvested = 0;
 
     public int moneyAvailable = 1000;
 
@@ -41,7 +41,7 @@ public class StatsScript : MonoBehaviour, IDataPersistence
         this.plantsLost = gameData.plantsLost;
         this.plantsHarvested = gameData.plantsHarvested;
         
-        this.numOfPests = gameData.numOfPests;
+        //this.numOfPests = gameData.numOfPests;
         this.numOfPlants = gameData.numOfPlants;
         this.carrotsHarvested = gameData.carrotHarvested;
         this.potatoHarvested = gameData.potatoHarvested;
@@ -61,7 +61,7 @@ public class StatsScript : MonoBehaviour, IDataPersistence
         gameData.plantsHarvested = this.plantsHarvested;
         gameData.moneyAvailable = this.moneyAvailable;
         gameData.numOfPlants = this.numOfPlants;
-        gameData.numOfPests = this.numOfPests;
+        //gameData.numOfPests = this.numOfPests;
         gameData.carrotHarvested = this.carrotsHarvested;
         gameData.potatoHarvested= this.potatoHarvested;
         gameData.yamHarvested= this.yamHarvested;

@@ -1,12 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq; 
+using System.Linq;
+using UnityEngine.SceneManagement;
+
 
 public class GameDataPersistence : MonoBehaviour
 {
     [Header("File Storage Config")]
-    [SerializeField] private string fileName;
+    private string fileName;
+    [SerializeField] private bool useEncryption;
 
     
     private GameData gameData;
@@ -17,22 +20,48 @@ public class GameDataPersistence : MonoBehaviour
     
     private void Awake()
     {
+        fileName = SceneManager.GetActiveScene().name + "-saveFile.json";
         if (Instance  != null)
         {
-            Debug.LogError("Found more than one Persistence Manager in the scene");
+            Debug.LogError("Found more than one Persistence Manager in the scene.  Destroying newest one");
+            return;
+
         }
         Instance = this;
+
+        this.dataHandler = new FileDataHandler(Application.persistentDataPath + "/saves", fileName, useEncryption);
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        this.dataHandler = new FileDataHandler(Application.persistentDataPath+"/saves", fileName);
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
+    }
+
+    public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
         this.dataPersistenceObjects = FindAllDataPersistenceObjects();
         LoadGame();
     }
 
+    public void OnSceneUnloaded(Scene scene)
+    {
+        SaveGame();
+    }
+
     public void NewGame()
     {
+        //if (this.dataHandler != null)
+        //{
+        //    this.dataPersistenceObjects.Clear();
+        //    this.dataHandler = null;
+        //}
         this.gameData = new GameData();
     }
     public void LoadGame()
@@ -42,7 +71,7 @@ public class GameDataPersistence : MonoBehaviour
 
         if (this.gameData == null)
         {
-            NewGame();
+            return;
         }
         foreach (IDataPersistence dataPersistanceObj in dataPersistenceObjects)
         {
@@ -54,7 +83,14 @@ public class GameDataPersistence : MonoBehaviour
 
     public void SaveGame()
     {
-        foreach(IDataPersistence dataPersistanceObj in dataPersistenceObjects)
+
+        if (this.gameData == null)
+        {
+            return;
+        }
+        this.dataHandler = new FileDataHandler(Application.persistentDataPath + "/saves", fileName, useEncryption);
+        this.dataPersistenceObjects = FindAllDataPersistenceObjects();
+        foreach (IDataPersistence dataPersistanceObj in dataPersistenceObjects)
         {
             
             dataPersistanceObj.SaveData(ref gameData);
@@ -68,8 +104,7 @@ public class GameDataPersistence : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        this.dataHandler = new FileDataHandler(Application.persistentDataPath + "/saves", fileName);
-        this.dataPersistenceObjects = FindAllDataPersistenceObjects();
+        
         SaveGame();
     }
 
@@ -80,5 +115,10 @@ public class GameDataPersistence : MonoBehaviour
 
 
         return new List<IDataPersistence>(dataPersistenceObjects);
+    }
+
+    public bool HasGameData()
+    {
+        return this.gameData != null;
     }
 }

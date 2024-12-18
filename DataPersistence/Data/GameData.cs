@@ -17,6 +17,7 @@ public class GameData
     public int yamHarvested;
     public int carrotHarvested;
     public int potatoHarvested;
+    public bool gameCompleted;
 
     public bool deactivateDialogue;
 
@@ -37,10 +38,10 @@ public class GameData
         this.yamHarvested = 0;
         this.carrotHarvested = 0;
         this.potatoHarvested = 0;
+        this.gameCompleted = false;
 
         this.elapsedTime = 0;
         this.deactivateDialogue = false;
-
 
         plotList = new();
         pestList = new();
@@ -83,10 +84,14 @@ public class PestData
 {
     public float x;
     public float y;
+    public float z;
+    public float scaleX;
+    public float scaleY;
+    public float scaleZ;
     public float speed;
     public bool originalPest;
     public bool newSpawn;
-    public pestType type;
+    public PestType type;
 
 
 }
